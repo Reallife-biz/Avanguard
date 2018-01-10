@@ -7,13 +7,41 @@ Both x32 and x64 supports and includes:
 * PE Analyzer
 * Memory analyzer
 * Call-stack analyzer
-* Anti-injection techinques (against of CreateRemoteThread, manual modules mapping, injection through APC and AppInit_DLLs, context switching)
-* Memory protection (kernel callbacks, remapping)
+* Anti-injection techinques (against of CreateRemoteThread, manual modules mapping, injection through APC, windows hooks, AppInit_DLLs and context switching)
+* Memory protection (kernel callbacks, modules remapping)
 * Anti-splicing (modules executable sections and imports table verifying)
 * Anti-macros (virtual keyboard and mouse input - useful for online games)
 * Kernel modules info
 * Threads and modules callbacks
 * Handles keeper - prevents managing your app from other processes due to close handles of your process in external apps (for example, CheatEngine or another memory editors)
+* Support of self-modified code
 * TLS support
+* DACLs support
+* HWIDs collector
+* Code-signing certificates and system files checkings
+* API for external calls of defence functions
+
 ### Using
-All you need is to load Avanguard.dll as soon as possible, but you can achieve more effective protection due to manual protection calls in your app, you know. For exmaple, you can insert anti-debugging inlines into your code and manipulate your data according the results of the called functions (for example, you can broke the data pointers or stack if AD detects the debugger), or you can redefine the modules and threads callbacks to realize your own checking algorithm. And much, much more.
+All you need is to load Avanguard.dll as soon as possible.  
+It collects all information about consistence of process, sets up the memory, threads, APCs and modules filters and starts up the protection.  
+  
+You can use the AvnAPI using this code:  
+```
+#include "AvnApi.h"
+
+HMODULE hAvn = GetModuleHandle(L"Avanguard.dll");
+PAVN_API AvnApi = *(PAVN_API*)GetProcAddress(hAvn, "Stub");
+
+AvnApi->Lock();
+BOOL IsModuleValid = AvnApi->AvnIsModuleValid(hAvn);
+// ... Other AvnApi calls ...
+AvnApi->Unlock();
+```
+If you use the self-modification of modules in your code, you should use this snippet:
+```
+AvnApi->Lock();
+// ... Module modification ...
+AvnApi->AvnRehashModule(hChangedModule);
+AvnApi->Unlock();
+```
+You should always use the _Lock()_/_Unlock()_ to AvnApi calls!
