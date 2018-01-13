@@ -87,6 +87,7 @@ VOID ModulesFilter::DisableModulesFilter() {
 	if (!Initialized && !Initialize()) return;
 	if (!Enabled) return;
 	UnHookEmAll(HookInfo, sizeof(HookInfo) / sizeof(HookInfo[0]));
+	Enabled = FALSE;
 }
 
 BOOL ModulesFilter::EnableDllNotification() {

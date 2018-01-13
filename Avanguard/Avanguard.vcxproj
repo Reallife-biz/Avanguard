@@ -230,6 +230,7 @@
     <ClInclude Include="AvanguardDefence\ModulesFilter.h" />
     <ClInclude Include="AvanguardDefence\hModules.h" />
     <ClInclude Include="AvanguardDefence\ModulesStorage.h" />
+    <ClInclude Include="AvanguardDefence\ModulesUtils.h" />
     <ClInclude Include="AvanguardDefence\PEAnalyzer.h" />
     <ClInclude Include="AvanguardDefence\PebTeb.h" />
     <ClInclude Include="AvanguardDefence\PEUtils.h" />
@@ -293,6 +294,7 @@
     <ClCompile Include="AvanguardDefence\ModulesFilter.cpp" />
     <ClCompile Include="AvanguardDefence\hModules.cpp" />
     <ClCompile Include="AvanguardDefence\ModulesStorage.cpp" />
+    <ClCompile Include="AvanguardDefence\ModulesUtils.cpp" />
     <ClCompile Include="AvanguardDefence\PEAnalyzer.cpp" />
     <ClCompile Include="AvanguardDefence\PEUtils.cpp" />
     <ClCompile Include="AvanguardDefence\ProcessAPI.cpp" />
@@ -343,9 +345,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </MASM>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

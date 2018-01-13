@@ -70,16 +70,50 @@ inline std::wstring ValToWideStr(const T& Value) {
 }
 
 template <typename T>
-inline std::string ValToAnsiHex(const T& Value, unsigned char Length) {
+inline std::string ValToAnsiHex(const T& Value, unsigned char Length, bool AddPrefix = true) {
 	std::ostringstream OutputStringStream;
-	OutputStringStream << "0x" << std::uppercase << std::setfill('0') << std::setw(Length) << Value;
+	if (AddPrefix)
+		OutputStringStream << "0x" << std::uppercase << std::setfill('0') << std::setw(Length) << std::hex << Value;
+	else
+		OutputStringStream << std::uppercase << std::setfill('0') << std::setw(Length) << std::hex << Value;
 	return std::string(OutputStringStream.str());
 }
 
 template <typename T>
-inline std::wstring ValToWideHex(const T& Value, unsigned char Length) {
+inline std::wstring ValToWideHex(const T& Value, unsigned char Length, bool AddPrefix = true) {
 	std::wostringstream OutputStringStream;
-	OutputStringStream << L"0x" << std::uppercase << std::setfill(L'0') << std::setw(Length) << Value;
+	if (AddPrefix)
+		OutputStringStream << L"0x" << std::uppercase << std::setfill(L'0') << std::setw(Length) << std::hex << Value;
+	else
+		OutputStringStream << std::uppercase << std::setfill(L'0') << std::setw(Length) << std::hex << Value;
+	return std::wstring(OutputStringStream.str());
+}
+
+template <typename T>
+inline std::string FillLeftAnsi(const T& Value, unsigned char Length, char Filler) {
+	std::ostringstream OutputStringStream;
+	OutputStringStream << std::right << std::setfill(Filler) << std::setw(Length) << Value;
+	return std::string(OutputStringStream.str());
+}
+
+template <typename T>
+inline std::string FillRightAnsi(const T& Value, unsigned char Length, char Filler) {
+	std::ostringstream OutputStringStream;
+	OutputStringStream << std::left << std::setfill(Filler) << std::setw(Length) << Value;
+	return std::string(OutputStringStream.str());
+}
+
+template <typename T>
+inline std::wstring FillLeftWide(const T& Value, unsigned char Length, wchar_t Filler) {
+	std::wostringstream OutputStringStream;
+	OutputStringStream << std::right << std::setfill(Filler) << std::setw(Length) << Value;
+	return std::wstring(OutputStringStream.str());
+}
+
+template <typename T>
+inline std::wstring FillRightWide(const T& Value, unsigned char Length, wchar_t Filler) {
+	std::wostringstream OutputStringStream;
+	OutputStringStream << std::left << std::setfill(Filler) << std::setw(Length) << Value;
 	return std::wstring(OutputStringStream.str());
 }
 

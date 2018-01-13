@@ -78,6 +78,13 @@ Post:																							\
 Post:																							\
 	if (PostCallback) ResultVarName = PostCallback(ResultVarName, __VA_ARGS__);	
 
+#define PRE_FILTRATE_TO(ReturnType, ResultVarName, FunctionName, PreCallback, ...)	\
+	BOOL SkipOriginalCall = FALSE;													\
+	ReturnType ResultVarName;														\
+	if (PreCallback) ResultVarName = PreCallback(&SkipOriginalCall, __VA_ARGS__);	\
+	if (SkipOriginalCall) goto Post;												\
+	ResultVarName = Orgnl##FunctionName(__VA_ARGS__);								\
+Post:																							
 
 #define DEFINE_FILTERS(FunctionName, PreCallback, PostCallback) \
 	pPre##FunctionName = PreCallback;							\

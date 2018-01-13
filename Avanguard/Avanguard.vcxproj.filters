@@ -106,6 +106,9 @@
     <Filter Include="AvanguardDefence\ContextFilter">
       <UniqueIdentifier>{10fd8230-76bd-44cf-b844-9ba86253c200}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AvanguardDefence\ModulesUtils">
+      <UniqueIdentifier>{bb626324-6a72-4934-b81f-bdff93b29666}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -291,6 +294,9 @@
     <ClInclude Include="AvanguardDefence\ContextFilter.h">
       <Filter>AvanguardDefence\ContextFilter</Filter>
     </ClInclude>
+    <ClInclude Include="AvanguardDefence\ModulesUtils.h">
+      <Filter>AvanguardDefence\ModulesUtils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -395,6 +401,9 @@
     <ClCompile Include="AvanguardDefence\ContextFilter.cpp">
       <Filter>AvanguardDefence\ContextFilter</Filter>
     </ClCompile>
+    <ClCompile Include="AvanguardDefence\ModulesUtils.cpp">
+      <Filter>AvanguardDefence\ModulesUtils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="AvanguardDefence\SupportedOS.manifest">
@@ -425,8 +434,5 @@
     <MASM Include="AvanguardDefence\ApcInterceptionRoutine.asm">
       <Filter>AvanguardDefence\KiUserApcDispatcher</Filter>
     </MASM>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

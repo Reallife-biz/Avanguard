@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "PebTeb.h"
+#include "ModulesUtils.h"
 
 /*
 	Принцип работы оконных хуков:

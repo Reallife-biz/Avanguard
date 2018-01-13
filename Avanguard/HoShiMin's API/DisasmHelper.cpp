@@ -49,7 +49,7 @@ std::string disassemble(
 		sprintf_s(address, "0x%016I64X\t", (uint64_t)instructionPointer);
 		result += std::string(address) + buffer + std::string("\r\n");
 
-		if (callback) callback((void*)instructionPointer, buffer);
+		if (callback) callback((void*)readPointer, (void*)instructionPointer, instruction.length, buffer);
 
 		readPointer += instruction.length;
 		length -= instruction.length;

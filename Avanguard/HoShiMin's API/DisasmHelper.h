@@ -12,7 +12,9 @@ typedef enum _CODE_ARCH {
 } CODE_ARCH, *PCODE_ARCH;
 
 typedef void (__stdcall *_OnDisassembleCallback) (
-	void* Address, 
+	void* Code,
+	void* BaseAddress,
+	unsigned int InstructionLength,
 	char* Disassembly
 );
 

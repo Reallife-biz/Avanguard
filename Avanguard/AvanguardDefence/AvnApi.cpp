@@ -38,7 +38,11 @@ BOOL WINAPI AvnVerifyEmbeddedSignature(LPCWSTR FilePath) {
 }
 
 BOOL WINAPI AvnIsAddressAllowed(PVOID Address, BOOL IncludeJitMemory) {
-	HMODULE hModule = ModulesStorage::GetModuleBase(Address);
+	MEMORY_BASIC_INFORMATION MemoryInfo = { 0 };
+	VirtualQuery(Address, &MemoryInfo, sizeof(MemoryInfo));
+	if ((MemoryInfo.Protect & EXECUTABLE_MEMORY) == 0) return TRUE;
+
+	HMODULE hModule = GetModuleBase(Address);
 	if (hModule == NULL) {
 #ifdef MEMORY_FILTER
 		if (!IncludeJitMemory) return FALSE;

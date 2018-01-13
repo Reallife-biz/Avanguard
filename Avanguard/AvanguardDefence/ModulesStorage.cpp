@@ -13,24 +13,6 @@ ModulesStorage::~ModulesStorage() {
 	LoadedModules.clear();
 }
 
-HMODULE ModulesStorage::GetModuleBase(PVOID Pointer) {
-	HMODULE hModule;
-	BOOL Status = GetModuleHandleEx(
-		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-		(LPCWSTR)Pointer,
-		&hModule
-	);
-	return Status ? hModule : NULL;
-}
-
-std::wstring ModulesStorage::GetModuleName(HMODULE hModule) {
-	if (hModule == NULL) return std::wstring();
-	WCHAR Buffer[32768];
-	DWORD Length = GetModuleFileName(hModule, Buffer, sizeof(Buffer));
-	if (Length == 0) return std::wstring();
-	return Buffer;
-}
-
 void ModulesStorage::AnalyzeExecutableSections(const PEAnalyzer& pe, MODULE_INFO& ModuleInfo) {
 	const SECTIONS_SET& Sections = pe.GetSectionsInfo();
 	ModuleInfo.ExecutableSections.clear();
@@ -53,19 +35,6 @@ std::wstring ModulesStorage::GetNormalizedName(const std::wstring& Path) {
 	std::wstring Name = LowerCase(ExtractFileName(Path));
 	if (EndsWith(Name, DllPostfix) || EndsWith(Name, ExePostfix)) return Name;
 	return Name += DllPostfix;
-}
-
-void ModulesStorage::EnumerateModules(EnumerateModulesCallback Callback) {
-	if (Callback == NULL) return;
-	
-	NTDEFINES::PPEB Peb = GetPEB();
-	NTDEFINES::PPEB_LDR_DATA LdrData = (NTDEFINES::PPEB_LDR_DATA)Peb->Ldr;
-
-	NTDEFINES::PLDR_MODULE ListEntry = (NTDEFINES::PLDR_MODULE)LdrData->InLoadOrderModuleList.Flink;
-	while (ListEntry && ListEntry->BaseAddress) {
-		Callback(ListEntry);
-		ListEntry = (NTDEFINES::PLDR_MODULE)ListEntry->InLoadOrderModuleList.Flink;
-	}
 }
 
 void ModulesStorage::FillModulesInfo() {

@@ -17,6 +17,8 @@
 #include "WinTrusted.h"
 #include "ApcDispatcher.h"
 #include "DACL.h"
+#include "ModulesUtils.h"
+#include "ContextFilter.h"
 
 #include "HoShiMin's API\\StringsAPI.h"
 #include "HoShiMin's API\\ColoredConsole.h"
@@ -51,8 +53,21 @@ void Log(const std::wstring& Text) {
 	WriteFile(hLog, ToWrite.c_str(), (DWORD)ToWrite.length() * sizeof(std::wstring::value_type), &BytesWritten, NULL);
 	LeaveCriticalSection(&CriticalSection);
 }
+
+VOID DisassembleAndLog(PVOID Address, BYTE InstructionsCount) {
+	disassemble([](void* Code, void* Address, unsigned int InstructionLength, char* Disassembly) -> void {
+		std::wstring Bytes;
+		for (unsigned int i = 0; i < InstructionLength; i++) {
+			Bytes += ValToWideHex(*((PBYTE)Code + i), 2, FALSE);
+			if (i != InstructionLength - 1) Bytes += L" ";
+		}
+		Bytes = FillRightWide(Bytes, 22, L' ');
+		Log(L"\t\t" + ValToWideHex(Address, 16) + L"\t" + Bytes + L"\t" + AnsiToWide(Disassembly));
+	}, Address, Address, InstructionsCount);
+}
 #else
 #define Log(Argument) UNREFERENCED_PARAMETER(Argument)
+#define DisassembleAndLog(PVOID Address, BYTE InstructionsCount)
 #endif
 
 #ifdef TIMERED_CHECKINGS
@@ -101,7 +116,7 @@ static PVOID RestrictedAddresses[] = {
 };
 
 BOOL IsThreadAllowed(PVOID EntryPoint) {
-	HMODULE hModule = ModulesStorage::GetModuleBase(EntryPoint);
+	HMODULE hModule = GetModuleBase(EntryPoint);
 
 	if (hModule != NULL) {
 		if (hModule == hModules::hNtdll()		||
@@ -154,6 +169,8 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 
 	BOOL IsFileAllowed = SfcIsFileProtected(NULL, ModuleFileName->Buffer);
 	Log(IsFileAllowed ? (L"[v] Module " + Path + L" allowed!") : (L"[!] Module " + Path + L" not a system module!"));
+	if (IsFileAllowed) return TRUE;
+
 	if (!IsFileAllowed) {
 		Log(L"[i] Checking the sign of " + Path + L"...");
 		IsFileAllowed = IsFileSigned(ModuleFileName->Buffer, FALSE) || VerifyEmbeddedSignature(ModuleFileName->Buffer);
@@ -177,6 +194,49 @@ BOOL CALLBACK OnUnknownTraceLoadLibrary(PVOID Address, PUNICODE_STRING ModuleFil
 	Log(L"[x] Unknown trace entry " + ValToWideHex(Address, 16) + L" on load module " + std::wstring(ModuleFileName->Buffer));
 	__debugbreak();
 	return FALSE;
+}
+#endif
+
+#ifdef CONTEXT_FILTER
+BOOL IsTraceValid() {
+	const ULONG TraceSize = 30;
+	PVOID Trace[TraceSize];
+	ULONG Captured = CaptureStackBackTrace(0, TraceSize, Trace, NULL);
+	for (unsigned int i = 0; i < Captured; i++) {
+		HMODULE hModule = GetModuleBase(Trace[i]);
+		if (hModule != NULL) {
+			if (!ValidModulesStorage.IsModuleInStorage(hModule)) {
+				Log(L"[x] Context manipulation from unknown module " + GetModuleName(hModule));
+				return FALSE;
+			}
+		} else {
+			if (!VMStorage.IsMemoryInMap(Trace[i])) {
+				Log(L"[x] Context manipulation from unknown memory " + ValToWideHex(Trace[i], 16));
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+NTSTATUS NTAPI PreNtContinue(IN PBOOL SkipOriginalCall, PCONTEXT Context, BOOL TestAlert) {
+	if (!IsTraceValid()) {
+		Log(L"[x] PreNtContinue detected unknown trace element!");
+		__debugbreak();
+		*SkipOriginalCall = TRUE;
+		return STATUS_ACCESS_DENIED;
+	}
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS NTAPI PreSetContext(IN PBOOL SkipOriginalCall, HANDLE ThreadHandle, PCONTEXT Context) {
+	if (!IsTraceValid()) {
+		Log(L"[x] PreSetContext detected unknown trace element!");
+		__debugbreak();
+		*SkipOriginalCall = TRUE;
+		return STATUS_ACCESS_DENIED;
+	}
+	return STATUS_SUCCESS;
 }
 #endif
 
@@ -221,39 +281,41 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 			PVOID Source = Export.VA;
 			PVOID Destination = FindHookDestination(Source);
 			if (Destination == NULL) continue;
-			HMODULE hModule = ModulesStorage::GetModuleBase(Destination);
+			HMODULE hModule = GetModuleBase(Destination);
 			if (hModule != NULL) {
 				if (!ValidModulesStorage.IsModuleInStorage(hModule)) {
 					Log(
 						L"[x] Unknown destination module: " +
-						ValidModulesStorage.GetModuleName(hTarget) +
+						GetModuleName(hTarget) +
 						L"!" +
 						AnsiToWide(Export.Name) +
 						L" -> " +
-						ValidModulesStorage.GetModuleName(hModule) +
+						GetModuleName(hModule) +
 						L"!" +
 						ValToWideHex(Destination, 16)
 					);
+					DisassembleAndLog(Destination, 16);
 					ValidModulesHooked = FALSE;
-					__debugbreak();
 				}
-			} else if (VMStorage.IsMemoryInMap(Destination)) {
+			} else if (!VMStorage.IsMemoryInMap(Destination)) {
 				Log(
 					L"[x] Unknown hook destination: " + 
-					ValidModulesStorage.GetModuleName(hTarget) + 
+					GetModuleName(hTarget) + 
 					L"!" + 
 					AnsiToWide(Export.Name) + 
 					L" -> " +
 					ValToWideHex(Destination, 16)
 				);
+				DisassembleAndLog(Destination, 16);
 				ValidModulesHooked = FALSE;
-				__debugbreak();
 			}
 		}
 
 		// Если перехватили доверенные модули:
 		if (ValidModulesHooked)
 			ValidModulesStorage.RecalcModuleHash(hTarget);
+		else
+			__debugbreak();
 
 		return true;
 	});
@@ -262,54 +324,16 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 #ifdef FIND_UNKNOWN_MEMORY
 	EnumerateMemoryRegions(GetCurrentProcess(), [](const PMEMORY_BASIC_INFORMATION MemoryInfo) -> bool {
 		if (MemoryInfo->Protect & EXECUTABLE_MEMORY) {
-			if (ModulesStorage::GetModuleBase(MemoryInfo->BaseAddress) == NULL && !VMStorage.IsMemoryInMap(MemoryInfo->BaseAddress)) {
+			if (GetModuleBase(MemoryInfo->BaseAddress) == NULL && !VMStorage.IsMemoryInMap(MemoryInfo->BaseAddress)) {
 				Log(L"[x] Unknown memory " + ValToWideHex(MemoryInfo->BaseAddress, 16));
-				__debugbreak();
+				DisassembleAndLog(MemoryInfo->BaseAddress, 16);
+				//__debugbreak();
 			}
 		}
 		return true;
 	});
 #endif
 	AvnApi.AvnUnlock();
-}
-#endif
-
-#ifdef ELIMINATE_STARTUP_DYNAMIC_MODULES
-VOID EliminateStartupDynamicModules() {
-	ModulesStorage::EnumerateModules([](NTDEFINES::PLDR_MODULE Module) -> void {
-		if (Module->BaseAddress == hModules::hProcess || Module->BaseAddress == hModules::hCurrent)
-			return;
-
-		LPWSTR LibPath = Module->FullDllName.Buffer;
-		if (!SfcIsFileProtected(NULL, LibPath)) {
-			BOOL IsSigned = IsFileSigned(LibPath, FALSE);
-			BOOL IsVerified = VerifyEmbeddedSignature(LibPath);
-			if (!IsSigned && !IsVerified)
-				__debugbreak();
-		}
-	});
-}
-#endif
-
-#ifdef STARTUP_HOOKS_CHECKINGS
-BOOL StartupCheckHooks() {
-	BOOL IsHooked = FALSE;
-	ModulesStorage::EnumerateModules([&](NTDEFINES::PLDR_MODULE Module) -> void {
-		PEAnalyzer pe((HMODULE)Module->BaseAddress, FALSE);
-		const EXPORTS_INFO& Exports = pe.GetExportsInfo();
-		for (const auto& Entry : Exports.Exports) {
-			if (Entry.Name.length() == 0) continue;
-			if (PVOID Destination = FindHookDestination(Entry.VA)) {
-				HMODULE DestModule = ModulesStorage::GetModuleHandleByPtr(Destination);
-				std::wstring DestModuleName = ModulesStorage::GetModuleName(DestModule).c_str();
-				if (DestModule != Module->BaseAddress) {
-					IsHooked |= TRUE;
-					__debugbreak();
-				}
-			}
-		}
-	});
-	return IsHooked;
 }
 #endif
 
@@ -342,7 +366,7 @@ VOID WINAPI HkdEntryPoint() {
 		PROCESS_DUP_HANDLE		| PROCESS_QUERY_INFORMATION |
 		PROCESS_SET_QUOTA		| PROCESS_SET_INFORMATION	|
 		PROCESS_VM_OPERATION	| PROCESS_VM_READ | PROCESS_VM_WRITE |
-		PROCESS_SUSPEND_RESUME	| PROCESS_TERMINATE;
+		PROCESS_SUSPEND_RESUME;
 	Dacl.Deny(sidCurrentUser, AccessRights);
 	Dacl.Allow(sidEveryone, ~AccessRights & 0x1FFF);
 	Dacl.Allow(sidSystem, PROCESS_ALL_ACCESS);
@@ -380,7 +404,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 	switch (dwReason) {
 	case DLL_PROCESS_ATTACH: {
 		Log(L"[v] Avn loaded successfully!");
-
 		AvnInitializeApi();
 
 #ifdef LICENSE_CHECK
@@ -399,18 +422,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 		SwitchThreadsExecutionStatus(Suspend);
 
 		Log(L"[i] All threads were stopped");
-
-#ifdef ELIMINATE_STARTUP_DYNAMIC_MODULES
-		Log(L"[i] Eliminating startup dynamic modules...");
-		EliminateStartupDynamicModules();
-		Log(L"[v] Looks good");
-#endif
-
-#ifdef STARTUP_HOOKS_CHECKINGS
-		Log(L"[i] Finding startup hooks...");
-		StartupCheckHooks(); // Антивирусы!
-		Log(L"[v] Startup hooks checked");
-#endif
 
 #if defined TIMERED_CHECKINGS || defined STRICT_DACLs
 		PEAnalyzer pe(GetModuleHandle(NULL), FALSE);
@@ -458,11 +469,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 #ifdef APC_FILTER
 		ApcDispatcher::EnableApcFilter();
 		ApcDispatcher::SetupApcCallback([](PVOID ApcProc, PVOID RetAddr) -> BOOL {
-			BOOL IsApcAllowed = ModulesStorage::GetModuleBase(ApcProc) != NULL;
+			BOOL IsApcAllowed = GetModuleBase(ApcProc) != NULL;
 			Log(IsApcAllowed ? L"[i] Allowed APC queried" : L"[x] APC disallowed!");
 			return IsApcAllowed;
 		});
-		Log(L"[v] Apc filters setted up!");
+		Log(L"[v] APC filters setted up!");
 #endif
 
 #ifdef MEMORY_FILTER
@@ -479,6 +490,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 			PostNtUnmapViewOfSection
 		);
 		Log(L"[v] Memory filter setted up!");
+#endif
+
+#ifdef CONTEXT_FILTER
+		ContextFilter::SetupContextCallbacks(PreNtContinue, PreSetContext);
+		ContextFilter::EnableContextFilter();
 #endif
 
 #ifdef MODULES_FILTER
@@ -500,6 +516,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 #ifdef TIMERED_CHECKINGS
 		RtlDeleteTimer(TimerQueue, TimerHandle, INVALID_HANDLE_VALUE);
 		RtlDeleteTimerQueue(TimerQueue);
+#endif
+
+#ifdef CONTEXT_FILTER
+		ContextFilter::DisableContextFilter();
 #endif
 
 #ifdef APC_FILTER

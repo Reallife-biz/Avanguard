@@ -2,14 +2,11 @@
 
 #include "PebTeb.h"
 #include "PEAnalyzer.h"
-#include "ApisetResolver.h"
-#include "CheckHook.h"
-#include "WinTrusted.h"
+#include "ModulesUtils.h"
 
 #include "..\\t1ha\\t1ha.h"
 #include "..\\HoShiMin's API\\StringsAPI.h"
 
-#include <Sfc.h>
 #include <functional>
 
 typedef struct _EXECUTABLE_SECTION_INFO {
@@ -29,8 +26,6 @@ typedef struct _MODULE_INFO {
 
 typedef std::function<bool(const MODULE_INFO& ModuleInfo)> OnChangedModuleCallback;
 
-typedef std::function<void(NTDEFINES::PLDR_MODULE Module)> EnumerateModulesCallback;
-
 class ModulesStorage {
 private:
 	CRITICAL_SECTION CriticalSection;
@@ -46,10 +41,6 @@ private:
 public:
 	ModulesStorage(BOOL CollectModulesInfo);
 	~ModulesStorage();
-
-	static void EnumerateModules(EnumerateModulesCallback Callback);
-	static HMODULE GetModuleBase(PVOID Pointer);
-	static std::wstring GetModuleName(HMODULE hModule);
 
 	BOOL IsCodeSectionsValid(HMODULE hModule);
 	void RecalcModuleHash(HMODULE hModule);

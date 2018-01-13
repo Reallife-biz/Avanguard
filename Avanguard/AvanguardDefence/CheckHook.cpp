@@ -29,6 +29,9 @@ PVOID FollowTheWhiteRabbit(PVOID Address) {
 	// Проверка на jmp cs:Address:
 	if (*(PWORD)Address == 0x25FF && *(PULONG)((PBYTE)Address + 2) == 0x00000000) return GetAbsolutePtr(Address, 6);
 
+	// Проверка на jmp [rip + 0xNNNNNNNN]:
+	if (*(PWORD)Address == 0x25FF && *(PULONG)((PBYTE)Address + 2) != 0x00000000) return Relative2Absolute(Address, 2, 6);
+
 	// Проверка на mov rax, Address -> push rax -> ret:
 	if (*(PWORD)Address == 0xB848 && *(PWORD)((PBYTE)Address + 10) == 0xC350) return GetAbsolutePtr(Address, 2);
 #endif

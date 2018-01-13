@@ -11,14 +11,9 @@ BOOL WinHooks::Initialize() {
 	PVOID* KernelCallbackTable = (PVOID*)(GetPEB()->KernelCallbackTable);
 	if (KernelCallbackTable == NULL) return FALSE;
 
-#define MASK64 (SIZE_T)0xFFFFFFFF00000000LL
-#define MASK32 (SIZE_T)0xFF000000LL
-	SIZE_T Mask = ((SIZE_T)*KernelCallbackTable) & MASK64 ? MASK64 : MASK32;
-	SIZE_T Signature = ((SIZE_T)(*KernelCallbackTable) & Mask);
-#undef MASK64
-#undef MASK32
+	HMODULE hModule = GetModuleBase(*KernelCallbackTable);
 
-	for (int i = 0; (((SIZE_T)KernelCallbackTable[i]) & Mask) == Signature; i++)
+	for (unsigned int i = 0; GetModuleBase(KernelCallbackTable[i]) == hModule; i++)
 		KernelCallbacks.emplace_back(KernelCallbackTable[i]);
 	std::sort(KernelCallbacks.begin(), KernelCallbacks.end());
 

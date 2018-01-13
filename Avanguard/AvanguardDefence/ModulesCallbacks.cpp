@@ -29,7 +29,7 @@ NTSTATUS CALLBACK PreLoadModuleCallback(
 		USHORT Captured = CaptureStackBackTrace(0, TraceCount, Ptrs, NULL);
 		for (unsigned short i = 0; i < Captured; i++) {
 			PVOID Address = Ptrs[i];
-			HMODULE hModule = ModulesStorage::GetModuleBase(Address);
+			HMODULE hModule = GetModuleBase(Address);
 #ifdef MEMORY_FILTER
 			BOOL IsAddressAllowed = hModule == NULL 
 				? VMStorage.IsMemoryInMap(Address) 
