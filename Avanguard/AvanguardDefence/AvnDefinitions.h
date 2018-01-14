@@ -10,12 +10,15 @@
 #define MODULES_FILTER
 #define APC_FILTER
 //#define MEMORY_FILTER
-//#define CONTEXT_FILTER
 //#define STACKTRACE_CHECK /* Если есть JIT, использовать ТОЛЬКО с MEMORY_FILTER */
 #define TIMERED_CHECKINGS
 
 #ifdef MODULES_FILTER
 	#define WINDOWS_HOOKS_FILTER
+#endif
+
+#if defined MODULES_FILTER && defined MEMORY_FILTER
+	//#define CONTEXT_FILTER
 #endif
 
 #ifdef TIMERED_CHECKINGS

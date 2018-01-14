@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <winternl.h>
 
+
+
 namespace NTDEFINES {
 	typedef struct _PEB_LDR_DATA {
 		ULONG                   Length;

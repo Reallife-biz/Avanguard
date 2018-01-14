@@ -6,8 +6,8 @@
 #include "ModulesCallbacks.h"
 #include "MemoryCallbacks.h"
 
-static CRITICAL_SECTION CriticalSection;
 AVN_API AvnApi;
+static CRITICAL_SECTION CriticalSection;
 
 VOID WINAPI AvnLock() {
 	EnterCriticalSection(&CriticalSection);

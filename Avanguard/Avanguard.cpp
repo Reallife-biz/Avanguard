@@ -67,7 +67,7 @@ VOID DisassembleAndLog(PVOID Address, BYTE InstructionsCount) {
 }
 #else
 #define Log(Argument) UNREFERENCED_PARAMETER(Argument)
-#define DisassembleAndLog(PVOID Address, BYTE InstructionsCount)
+#define DisassembleAndLog(Address, InstructionsCount)
 #endif
 
 #ifdef TIMERED_CHECKINGS
@@ -126,11 +126,19 @@ BOOL IsThreadAllowed(PVOID EntryPoint) {
 			for (PVOID Address : RestrictedAddresses)
 				if (Address == EntryPoint) return FALSE;
 		}
+#ifdef MODULES_FILTER
 		return ValidModulesStorage.IsModuleInStorage(hModule);
+#else
+		return TRUE;
+#endif
 	} 
+#ifdef MEMORY_FILTER
 	else {
 		return VMStorage.IsMemoryInMap(EntryPoint);
 	}
+#else
+	return TRUE;
+#endif
 }
 
 BOOL CALLBACK OnThreadCreated(

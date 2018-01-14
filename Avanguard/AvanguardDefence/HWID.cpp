@@ -297,20 +297,31 @@ PVOID ParseBoardInfo(IN PBASEBOARD_INFO BaseboardInfo, OUT PFIRMWARE_INFO Firmwa
 	return GoToNextBlock((PVOID)BaseboardTextData);
 }
 
+typedef UINT (WINAPI *_GetSystemFirmwareTable)(
+	_In_ DWORD FirmwareTableProviderSignature,
+	_In_ DWORD FirmwareTableID,
+	_Out_writes_bytes_to_opt_(BufferSize, return) PVOID pFirmwareTableBuffer,
+	_In_ DWORD BufferSize
+);
+
+_GetSystemFirmwareTable __GetSystemFirmwareTable = 
+	(_GetSystemFirmwareTable)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "GetSystemFirmwareTable");
+
 BOOL GetFirmwareInfo(OUT PFIRMWARE_INFO FirmwareInfo) {
 	if (FirmwareInfo == NULL) return FALSE;
+	if (__GetSystemFirmwareTable == NULL) return FALSE;
 
 	ZeroMemory(FirmwareInfo, sizeof(FIRMWARE_INFO));
 
 	const DWORD ProviderSignature = 'RSMB'; // RawSMBIOS
 
 	// Получаем размер:
-	UINT RequiredSize = GetSystemFirmwareTable(ProviderSignature, NULL, NULL, 0);
+	UINT RequiredSize = __GetSystemFirmwareTable(ProviderSignature, NULL, NULL, 0);
 	if (RequiredSize == 0) return NULL;
 	
 	// Получаем Raw SMBIOS:
 	register PRAW_SMBIOS_DATA SMBIOS = (PRAW_SMBIOS_DATA) new BYTE[RequiredSize];
-	UINT WrittenBytes = GetSystemFirmwareTable(ProviderSignature, NULL, SMBIOS, RequiredSize);
+	UINT WrittenBytes = __GetSystemFirmwareTable(ProviderSignature, NULL, SMBIOS, RequiredSize);
 	if (WrittenBytes > RequiredSize) {
 		delete[] SMBIOS;
 		return FALSE;

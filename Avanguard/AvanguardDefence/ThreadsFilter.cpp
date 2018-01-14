@@ -17,6 +17,9 @@ static std::unordered_set<HANDLE> LocalThreads;
 static const _NtTerminateThread NtTerminateThread =
 	(_NtTerminateThread)GetProcAddress(hModules::hNtdll(), "NtTerminateThread");
 
+typedef DWORD (WINAPI *_GetThreadId)(HANDLE hProcess);
+static const _GetThreadId __GetThreadId = (_GetThreadId)GetProcAddress(hModules::hKernel32(), "GetThreadId");
+
 INTERCEPTION(VOID, NTAPI, LdrInitializeThunk, PCONTEXT Context) {
 	HANDLE ThreadId = (HANDLE)GetCurrentThreadId();
 
@@ -125,7 +128,7 @@ INTERCEPTION(NTSTATUS, NTAPI, NtCreateThreadEx,
 	);
 
 	if (NT_SUCCESS(Status) && (GetProcessId(ProcessHandle) == GetCurrentProcessId())) {
-		HANDLE ThreadId = (HANDLE)GetThreadId(*ThreadHandle);
+		HANDLE ThreadId = (HANDLE)__GetThreadId(*ThreadHandle);
 		LocalThreads.emplace(ThreadId);
 		if (OnValidThreadCreate) OnValidThreadCreate(ThreadId, lpStartAddress, lpParameter);
 	}
@@ -139,7 +142,7 @@ INTERCEPTION(NTSTATUS, NTAPI, NtTerminateThread,
 	IN HANDLE ThreadHandle,
 	IN NTSTATUS ExitStatus
 ) {
-	HANDLE ThreadId = (HANDLE)GetThreadId(ThreadHandle);
+	HANDLE ThreadId = (HANDLE)__GetThreadId(ThreadHandle);
 	BOOL IsCurrentThread = ThreadId == (HANDLE)GetCurrentThreadId();
 
 	BOOL ThreadExists;
