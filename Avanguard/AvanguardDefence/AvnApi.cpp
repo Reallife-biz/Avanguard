@@ -32,6 +32,10 @@ BOOL WINAPI AvnIsStaticLoaded() {
 	return IsAvnStaticLoaded;
 }
 
+VOID WINAPI AvnRegisterThreatNotifier(OPTIONAL _AvnThreatNotifier Notifier) {
+	SetupNotificationRoutine(Notifier);
+}
+
 VOID WINAPI AvnEliminateThreat(AVN_THREAT Threat, OPTIONAL PVOID Data) {
 	EliminateThreat(Threat, Data);
 }
@@ -99,19 +103,20 @@ UINT64 WINAPI AvnHash(PVOID Data, ULONG Size) {
 
 VOID AvnInitializeApi() {
 	InitializeCriticalSectionAndSpinCount(&CriticalSection, 0xC0000000);
-	AvnApi.AvnStart = AvnStart;
-	AvnApi.AvnStop = AvnStop;
-	AvnApi.AvnIsStarted = AvnIsStarted;
-	AvnApi.AvnIsStaticLoaded = AvnIsStaticLoaded;
-	AvnApi.AvnEliminateThreat = AvnEliminateThreat;
-	AvnApi.AvnLock = AvnLock;
-	AvnApi.AvnUnlock = AvnUnlock;
-	AvnApi.AvnRehashModule = AvnRehashModule;
-	AvnApi.AvnIsModuleValid = AvnIsModuleValid;
-	AvnApi.AvnIsFileProtected = AvnIsFileProtected;
-	AvnApi.AvnIsFileSigned = AvnIsFileSigned;
-	AvnApi.AvnVerifyEmbeddedSignature = AvnVerifyEmbeddedSignature;
-	AvnApi.AvnIsAddressAllowed = AvnIsAddressAllowed;
-	AvnApi.AvnGetHWID = AvnGetHWID;
-	AvnApi.AvnHash = AvnHash;
+	AvnApi.AvnStart						= AvnStart;
+	AvnApi.AvnStop						= AvnStop;
+	AvnApi.AvnIsStarted					= AvnIsStarted;
+	AvnApi.AvnIsStaticLoaded			= AvnIsStaticLoaded;
+	AvnApi.AvnRegisterThreatNotifier	= AvnRegisterThreatNotifier;
+	AvnApi.AvnEliminateThreat			= AvnEliminateThreat;
+	AvnApi.AvnLock						= AvnLock;
+	AvnApi.AvnUnlock					= AvnUnlock;
+	AvnApi.AvnRehashModule				= AvnRehashModule;
+	AvnApi.AvnIsModuleValid				= AvnIsModuleValid;
+	AvnApi.AvnIsFileProtected			= AvnIsFileProtected;
+	AvnApi.AvnIsFileSigned				= AvnIsFileSigned;
+	AvnApi.AvnVerifyEmbeddedSignature	= AvnVerifyEmbeddedSignature;
+	AvnApi.AvnIsAddressAllowed			= AvnIsAddressAllowed;
+	AvnApi.AvnGetHWID					= AvnGetHWID;
+	AvnApi.AvnHash						= AvnHash;
 }

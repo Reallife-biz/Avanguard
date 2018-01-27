@@ -195,7 +195,7 @@ BOOL SetupThreadsFilter(
 
 	if (!IsThreadsHooksInitialized) {
 		LocalThreads.clear();
-		InitializeCriticalSection(&CriticalSection);
+		InitializeCriticalSectionAndSpinCount(&CriticalSection, 0xC0000000);
 		IsThreadsHooksInitialized = HookEmAll(ThreadsHooksInfo, sizeof(ThreadsHooksInfo) / sizeof(ThreadsHooksInfo[0]));
 	}
 	return IsThreadsHooksInitialized;
