@@ -44,4 +44,23 @@ AvnApi->Lock();
 AvnApi->AvnRehashModule(hChangedModule);
 AvnApi->Unlock();
 ```
-You should always use the _Lock()_/_Unlock()_ to AvnApi calls!
+You should always use the _Lock()_/_Unlock()_ to AvnApi calls!  
+  
+Java bindings:
+```
+public class Main {
+
+    public static void main(String[] args) {
+        AvnBind.avnRegisterThreatNotifier((int threatType) -> {
+            System.out.println("Threat " + AvnBind.ThreatType.getThreat(threatType).name());
+            return true;
+        });
+
+        AvnBind.avnEliminateThreat(AvnBind.ThreatType.UNKNOWN_APC_DESTINATION.getValue());
+
+        AvnBind.avnRegisterThreatNotifier(null);
+        AvnBind.avnEliminateThreat(AvnBind.ThreatType.UNKNOWN_APC_DESTINATION.getValue());
+    }
+}
+```
+Note, that you shall not rename the package name!
