@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "JavaBindings.h"
 
+#ifdef JAVA_BINDINGS
+
 static BOOL _IsJavaBinded = FALSE;
 
 extern BOOL AvnStartDefence();
@@ -104,3 +106,5 @@ BOOL CallJavaNotifier(AVN_THREAT Threat) {
 
 	return _env->CallBooleanMethod(_klass, _notifier, (int)Threat);
 }
+
+#endif

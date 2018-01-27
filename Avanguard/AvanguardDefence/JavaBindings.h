@@ -1,5 +1,9 @@
 #pragma once
 
+#include "AvnDefinitions.h"
+
+#ifdef JAVA_BINDINGS
+
 #include "HWIDsUtils.h"
 #include "ThreatTypes.h"
 
@@ -12,3 +16,5 @@ jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved);
 
 BOOL IsJavaBinded();
 BOOL CallJavaNotifier(AVN_THREAT Threat);
+
+#endif

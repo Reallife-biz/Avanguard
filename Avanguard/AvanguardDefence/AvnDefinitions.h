@@ -13,6 +13,8 @@
 #define STACKTRACE_CHECK /* Если есть JIT, использовать ТОЛЬКО с MEMORY_FILTER */
 #define TIMERED_CHECKINGS
 
+#define JAVA_BINDINGS
+
 #ifdef MODULES_FILTER
 	#define WINDOWS_HOOKS_FILTER
 #endif

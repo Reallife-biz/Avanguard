@@ -17,7 +17,9 @@ VOID Meltdown() {
 VOID EliminateThreat(AVN_THREAT Threat, OPTIONAL PVOID Data) {
 	if (_ThreatCallback)
 		if (_ThreatCallback(Threat, Data)) return;
+#ifdef JAVA_BINDINGS
 	if (CallJavaNotifier(Threat)) return;
+#endif
 
 	CONTEXT Context = { 0 };
 	RtlCaptureContext(&Context);
