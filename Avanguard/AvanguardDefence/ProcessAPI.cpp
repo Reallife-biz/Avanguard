@@ -115,7 +115,6 @@ BOOL GetProcessBasicInfo(HANDLE hProcess, OUT PPROCESS_BASIC_INFO ProcessBasicIn
 	return TRUE;
 }
 
-
 typedef NTSTATUS (NTAPI *_NtQueryVirtualMemory)(
 	IN				HANDLE						ProcessHandle,
 	IN OPTIONAL		PVOID						BaseAddress,
@@ -125,18 +124,29 @@ typedef NTSTATUS (NTAPI *_NtQueryVirtualMemory)(
 	OUT OPTIONAL	PSIZE_T						ReturnLength
 );
 
+NTSTATUS NTAPI __NtQueryVirtualMemory(
+	IN				HANDLE						ProcessHandle,
+	IN OPTIONAL		PVOID						BaseAddress,
+	IN				MEMORY_INFORMATION_CLASS	MemoryInformationClass,
+	OUT				PVOID						MemoryInformation,
+	IN				SIZE_T						MemoryInformationLength,
+	OUT OPTIONAL	PSIZE_T						ReturnLength
+) {
+	static _NtQueryVirtualMemory __dNtQueryVirtualMemory = NULL;
+	if (__dNtQueryVirtualMemory == NULL) __dNtQueryVirtualMemory = 
+		(_NtQueryVirtualMemory)GetProcAddress(GetModuleHandle(L"ntdll.dll"), "NtQueryVirtualMemory");
+	return __dNtQueryVirtualMemory(ProcessHandle, BaseAddress, MemoryInformationClass, MemoryInformation, MemoryInformationLength, ReturnLength);
+}
+
 VOID EnumerateMemoryRegions(
 	HANDLE hProcess, 
 	_MapCallback Callback
 ) {
-	static const _NtQueryVirtualMemory NtQueryVirtualMemory = 
-		(_NtQueryVirtualMemory)GetProcAddress(GetModuleHandle(L"ntdll.dll"), "NtQueryVirtualMemory");
-
 	if (Callback == NULL) return;
 	MEMORY_BASIC_INFORMATION Info;
 	SIZE_T Address = NULL;
 	SIZE_T ReturnLength = 0;
-	while (NT_SUCCESS(NtQueryVirtualMemory(
+	while (NT_SUCCESS(__NtQueryVirtualMemory(
 		hProcess,
 		(PVOID)Address,
 		MemoryBasicInformation,

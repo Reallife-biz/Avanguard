@@ -468,7 +468,7 @@ BOOL DBG_CONVENTION CheckInt3byCD03() {
 
 BOOL DBG_CONVENTION CheckInt2C() {
 	__try {
-		register DWORD _EDX = 0;
+		DWORD _EDX = 0;
 		__asm {
 			int 0x2C
 			mov _EDX, edx
@@ -516,7 +516,7 @@ BOOL DBG_CONVENTION CheckTrapException() {
 }
 
 BOOL DBG_CONVENTION CheckTrapFlag() {
-	register BOOL TrapFlag = FALSE;
+	BOOL TrapFlag = FALSE;
 	__asm {
 		pushfd			// Кладём на стек регистр флагов
 		pop eax			// Со стека в EAX

@@ -50,7 +50,7 @@ BOOL GetHddInfo(BYTE PhysicalDriveNumber, OUT PHDD_INFO pHddInfo) {
 	if (!Status) goto Exit;
 
 	// Вызываем с полным размером структуры:
-	register PSTORAGE_DEVICE_DESCRIPTOR pDeviceDescriptor = (PSTORAGE_DEVICE_DESCRIPTOR) new BYTE[DeviceDescriptor.Size];
+	PSTORAGE_DEVICE_DESCRIPTOR pDeviceDescriptor = (PSTORAGE_DEVICE_DESCRIPTOR) new BYTE[DeviceDescriptor.Size];
 	Status = DeviceIoControl(
 		hDrive,
 		IOCTL_STORAGE_QUERY_PROPERTY,
@@ -235,7 +235,7 @@ Exit:
 	Ищем строку по её порядковому номеру, который получаем из
 
 */
-LPCSTR __fastcall FindStringByNumber(register LPCSTR Base, register BYTE StringNumber) {
+LPCSTR __fastcall FindStringByNumber(LPCSTR Base, BYTE StringNumber) {
 	if (StringNumber <= 1) return Base;
 	StringNumber--;
 	for (int i = 0; i < StringNumber; i++) {
@@ -250,7 +250,7 @@ LPCSTR __fastcall FindStringByNumber(register LPCSTR Base, register BYTE StringN
 	и отсчитываем до первых встреченных двух нуль-терминаторов:
 */
 PVOID __fastcall GoToNextBlock(PVOID CurrentBlockEntireAddress) {
-	register PBYTE Address = (PBYTE)CurrentBlockEntireAddress;
+	PBYTE Address = (PBYTE)CurrentBlockEntireAddress;
 	while (*(PWORD)Address != 0) Address++;
 	return Address += 2;
 }
@@ -320,7 +320,7 @@ BOOL GetFirmwareInfo(OUT PFIRMWARE_INFO FirmwareInfo) {
 	if (RequiredSize == 0) return NULL;
 	
 	// Получаем Raw SMBIOS:
-	register PRAW_SMBIOS_DATA SMBIOS = (PRAW_SMBIOS_DATA) new BYTE[RequiredSize];
+	PRAW_SMBIOS_DATA SMBIOS = (PRAW_SMBIOS_DATA) new BYTE[RequiredSize];
 	UINT WrittenBytes = __GetSystemFirmwareTable(ProviderSignature, NULL, SMBIOS, RequiredSize);
 	if (WrittenBytes > RequiredSize) {
 		delete[] SMBIOS;
@@ -335,8 +335,8 @@ BOOL GetFirmwareInfo(OUT PFIRMWARE_INFO FirmwareInfo) {
 #define SIG_BASEBOARD	2
 
 	// Обходим весь блок памяти и ищем структуры по их номерам:
-	register PVOID Address = SMBIOS->SMBIOSTableData;
-	register PVOID MaximumAddress = (PBYTE)Address + SMBIOS->Length;
+	PVOID Address = SMBIOS->SMBIOSTableData;
+	PVOID MaximumAddress = (PBYTE)Address + SMBIOS->Length;
 	while (Address < MaximumAddress) {
 		switch (*(PBYTE)Address) {
 		case SIG_BIOS		: Address = ParseBIOSInfo((PBIOS_INFO)Address, FirmwareInfo); break;

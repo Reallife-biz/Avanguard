@@ -27,19 +27,17 @@ void MemoryStorage::Unlock() {
 	LeaveCriticalSection(&CriticalSection);
 }
 
-void MemoryStorage::AddRegion(PVOID Address, SIZE_T Size) {
-	REGION_DESCRIPTOR Descriptor;
-	Descriptor.Begin = (PVOID)AlignDown((SIZE_T)Address, PAGE_SIZE);
-	Descriptor.End = (PVOID)(AlignUp((SIZE_T)Address + Size, PAGE_SIZE) - 1);
-	MemoryMap.emplace_back(Descriptor);
+void MemoryStorage::AddRegion(PVOID Address) {
+	MEMORY_BASIC_INFORMATION MemoryInfo;
+	QueryVirtualMemory(Address, &MemoryInfo);
+	MemoryMap.emplace(MemoryInfo.AllocationBase);
 }
 
-void MemoryStorage::RemoveRegion(PVOID Address, SIZE_T Size) {
-	PVOID Begin = (PVOID)AlignDown((SIZE_T)Address, PAGE_SIZE);
-	PVOID End = (PVOID)(AlignUp((SIZE_T)Address + Size, PAGE_SIZE) - 1);
-	std::remove_if(MemoryMap.begin(), MemoryMap.end(), [&](const REGION_DESCRIPTOR& Entry) -> bool {
-		return (Entry.Begin >= Begin) && (Entry.End <= End);
-	});
+void MemoryStorage::RemoveRegion(PVOID Address) {
+	MEMORY_BASIC_INFORMATION MemoryInfo;
+	QueryVirtualMemory(Address, &MemoryInfo);
+	if (MemoryMap.find(MemoryInfo.AllocationBase) != MemoryMap.end())
+		MemoryMap.erase(MemoryInfo.AllocationBase);
 }
 
 void MemoryStorage::ReloadMemoryRegions() {
@@ -47,41 +45,29 @@ void MemoryStorage::ReloadMemoryRegions() {
 	MemoryMap.clear();
 	EnumerateMemoryRegions(GetCurrentProcess(), [this](const PMEMORY_BASIC_INFORMATION Info) -> bool {
 		if (Info->Protect & EXECUTABLE_MEMORY) 
-			AddRegion(Info->BaseAddress, Info->RegionSize);
+			AddRegion(Info->BaseAddress);
 		return true;
 	});
 	Unlock();
 }
 
-void MemoryStorage::ProcessAllocation(PVOID Base, SIZE_T Size) {
+void MemoryStorage::ProcessAllocation(PVOID Base) {
 	Lock();
-	AddRegion(Base, Size);
+	AddRegion(Base);
 	Unlock();
 }
 
-template <typename ContainerT, typename PredicateT >
-void erase_if(ContainerT& items, const PredicateT& predicate) {
-	for (auto& it = items.begin(); it != items.end(); ) {
-		if (predicate(*it)) 
-			it = items.erase(it);
-		else 
-			it++;
-	}
-};
-
-void MemoryStorage::ProcessFreeing(PVOID Base, SIZE_T Size) {
+void MemoryStorage::ProcessFreeing(PVOID Base) {
 	Lock();
-	RemoveRegion(Base, Size);
+	RemoveRegion(Base);
 	Unlock();
 }
 
 bool MemoryStorage::IsMemoryInMap(PVOID Address) {
+	MEMORY_BASIC_INFORMATION MemoryInfo;
+	QueryVirtualMemory(Address, &MemoryInfo);
 	Lock();
-	bool IsInMap;
-	for (auto& it = MemoryMap.begin(); it != MemoryMap.end(); it++) {
-		IsInMap = (it->Begin <= Address) && (it->End >= Address);
-		if (IsInMap) break;
-	}
+	bool IsInMap = MemoryMap.find(MemoryInfo.AllocationBase) != MemoryMap.end();
 	Unlock();
 	return IsInMap;
 }

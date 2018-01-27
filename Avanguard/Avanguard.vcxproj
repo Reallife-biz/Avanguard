@@ -74,20 +74,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Programming\Programs\C++\Avanguard\Avanguard\Zydis;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
+    <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Programming\Programs\C++\Avanguard\Avanguard\Zydis;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
+    <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Programming\Programs\C++\Avanguard\Avanguard\Zydis;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
+    <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Programming\Programs\C++\Avanguard\Avanguard\Zydis;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\MinHook;.\AvanguardDefence;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
+    <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,6 +98,8 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;AVANGUARD_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -105,7 +107,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt;libcmt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
@@ -124,6 +126,8 @@
       <OmitFramePointers>false</OmitFramePointers>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <ControlFlowGuard>false</ControlFlowGuard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -131,7 +135,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt;libcmt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
@@ -154,6 +158,8 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <StringPooling>true</StringPooling>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -163,7 +169,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
@@ -187,6 +193,8 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <StringPooling>true</StringPooling>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -196,7 +204,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
@@ -220,6 +228,8 @@
     <ClInclude Include="AvanguardDefence\HandlesKeeper.h" />
     <ClInclude Include="AvanguardDefence\HeapManager.h" />
     <ClInclude Include="AvanguardDefence\HWID.h" />
+    <ClInclude Include="AvanguardDefence\HWIDsUtils.h" />
+    <ClInclude Include="AvanguardDefence\JavaBindings.h" />
     <ClInclude Include="AvanguardDefence\KernelUtils.h" />
     <ClInclude Include="AvanguardDefence\KeSecuredMemory.h" />
     <ClInclude Include="AvanguardDefence\MemoryCallbacks.h" />
@@ -236,13 +246,19 @@
     <ClInclude Include="AvanguardDefence\PEUtils.h" />
     <ClInclude Include="AvanguardDefence\ProcessAPI.h" />
     <ClInclude Include="AvanguardDefence\ThreadsFilter.h" />
+    <ClInclude Include="AvanguardDefence\ThreatElimination.h" />
+    <ClInclude Include="AvanguardDefence\ThreatTypes.h" />
     <ClInclude Include="AvanguardDefence\TLS.h" />
     <ClInclude Include="AvanguardDefence\WinHooks.h" />
     <ClInclude Include="AvanguardDefence\WinTrusted.h" />
+    <ClInclude Include="HoShiMin%27s API\CodepageAPI.h" />
     <ClInclude Include="HoShiMin%27s API\ColoredConsole.h" />
     <ClInclude Include="HoShiMin%27s API\DisasmHelper.h" />
     <ClInclude Include="HoShiMin%27s API\HookHelper.h" />
     <ClInclude Include="HoShiMin%27s API\StringsAPI.h" />
+    <ClInclude Include="JNI\include\jni.h" />
+    <ClInclude Include="JNI\include\jvmti.h" />
+    <ClInclude Include="JNI\include\win32\jni_md.h" />
     <ClInclude Include="MinHook\MinHook.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="t1ha\t1ha.h" />
@@ -284,6 +300,8 @@
     <ClCompile Include="AvanguardDefence\HandlesKeeper.cpp" />
     <ClCompile Include="AvanguardDefence\HeapManager.cpp" />
     <ClCompile Include="AvanguardDefence\HWID.cpp" />
+    <ClCompile Include="AvanguardDefence\HWIDsUtils.cpp" />
+    <ClCompile Include="AvanguardDefence\JavaBindings.cpp" />
     <ClCompile Include="AvanguardDefence\KernelUtils.cpp" />
     <ClCompile Include="AvanguardDefence\KeSecuredMemory.cpp" />
     <ClCompile Include="AvanguardDefence\MemoryCallbacks.cpp" />
@@ -299,9 +317,11 @@
     <ClCompile Include="AvanguardDefence\PEUtils.cpp" />
     <ClCompile Include="AvanguardDefence\ProcessAPI.cpp" />
     <ClCompile Include="AvanguardDefence\ThreadsFilter.cpp" />
+    <ClCompile Include="AvanguardDefence\ThreatElimination.cpp" />
     <ClCompile Include="AvanguardDefence\TLS.cpp" />
     <ClCompile Include="AvanguardDefence\WinHooks.cpp" />
     <ClCompile Include="AvanguardDefence\WinTrusted.cpp" />
+    <ClCompile Include="HoShiMin%27s API\CodepageAPI.cpp" />
     <ClCompile Include="HoShiMin%27s API\DisasmHelper.cpp" />
     <ClCompile Include="HoShiMin%27s API\StringsAPI.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -315,6 +335,7 @@
     <Manifest Include="AvanguardDefence\SupportedOS.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="JNI\lib\jvm.lib" />
     <Library Include="MinHook\libMinHook.x64.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>

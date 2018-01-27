@@ -1,6 +1,7 @@
 #pragma once
 
 #define _SCL_SECURE_NO_WARNINGS
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include <string>
 #include <sstream>

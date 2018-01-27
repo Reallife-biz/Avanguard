@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hModules.h"
 #include "..\\HoShiMin's API\\HookHelper.h"
 
 typedef NTSTATUS (CALLBACK *_AllocMemoryPreCallback) (

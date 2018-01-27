@@ -8,6 +8,10 @@
 	ApcProc - APC-процедура
 	Continue - адрес возврата на продолжение
 */
+
+typedef NTSTATUS(NTAPI *_NtTestAlert)();
+extern const _NtTestAlert NtTestAlert;
+
 typedef BOOL (NTAPI *_ApcCallback)(PVOID ApcProc, PVOID Continue);
 
 class ApcDispatcher final {

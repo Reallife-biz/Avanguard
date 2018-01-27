@@ -109,6 +109,27 @@
     <Filter Include="AvanguardDefence\ModulesUtils">
       <UniqueIdentifier>{bb626324-6a72-4934-b81f-bdff93b29666}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AvanguardDefence\JavaSupport">
+      <UniqueIdentifier>{d8350677-f267-4851-8aca-b08fccb610a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AvanguardDefence\JavaSupport\JavaBindings">
+      <UniqueIdentifier>{ead8c17d-fc94-41a6-8dd2-684bf5083a1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AvanguardDefence\JavaSupport\JNI">
+      <UniqueIdentifier>{dba1cf9e-2cb5-4946-99e1-a97224fd7322}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AvanguardDefence\JavaSupport\JNI\include">
+      <UniqueIdentifier>{a33e2f6f-d88d-4fe2-b6de-afdb7df1be53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AvanguardDefence\JavaSupport\JNI\include\win32">
+      <UniqueIdentifier>{1174c18f-1e9d-420d-928e-0e55b8e673a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AvanguardDefence\JavaSupport\JNI\lib">
+      <UniqueIdentifier>{175266db-1a9b-47c8-88e4-50f1c67dea24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AvanguardDefence\ThreatEliminating">
+      <UniqueIdentifier>{daef30ed-f65b-46c7-9132-f85a8f4150b4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -146,9 +167,6 @@
     </ClInclude>
     <ClInclude Include="AvanguardDefence\PEUtils.h">
       <Filter>AvanguardDefence\Encryption</Filter>
-    </ClInclude>
-    <ClInclude Include="AvanguardDefence\ProcessAPI.h">
-      <Filter>AvanguardDefence\ProcessAPI</Filter>
     </ClInclude>
     <ClInclude Include="AvanguardDefence\TLS.h">
       <Filter>AvanguardDefence\TLS</Filter>
@@ -297,6 +315,33 @@
     <ClInclude Include="AvanguardDefence\ModulesUtils.h">
       <Filter>AvanguardDefence\ModulesUtils</Filter>
     </ClInclude>
+    <ClInclude Include="AvanguardDefence\ProcessAPI.h">
+      <Filter>AvanguardDefence\ProcessAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="AvanguardDefence\HWIDsUtils.h">
+      <Filter>AvanguardDefence\HWIDs</Filter>
+    </ClInclude>
+    <ClInclude Include="AvanguardDefence\JavaBindings.h">
+      <Filter>AvanguardDefence\JavaSupport\JavaBindings</Filter>
+    </ClInclude>
+    <ClInclude Include="JNI\include\win32\jni_md.h">
+      <Filter>AvanguardDefence\JavaSupport\JNI\include\win32</Filter>
+    </ClInclude>
+    <ClInclude Include="JNI\include\jni.h">
+      <Filter>AvanguardDefence\JavaSupport\JNI\include</Filter>
+    </ClInclude>
+    <ClInclude Include="JNI\include\jvmti.h">
+      <Filter>AvanguardDefence\JavaSupport\JNI\include</Filter>
+    </ClInclude>
+    <ClInclude Include="HoShiMin%27s API\CodepageAPI.h">
+      <Filter>HoShiMin%27s API</Filter>
+    </ClInclude>
+    <ClInclude Include="AvanguardDefence\ThreatTypes.h">
+      <Filter>AvanguardDefence\ThreatEliminating</Filter>
+    </ClInclude>
+    <ClInclude Include="AvanguardDefence\ThreatElimination.h">
+      <Filter>AvanguardDefence\ThreatEliminating</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -404,6 +449,18 @@
     <ClCompile Include="AvanguardDefence\ModulesUtils.cpp">
       <Filter>AvanguardDefence\ModulesUtils</Filter>
     </ClCompile>
+    <ClCompile Include="AvanguardDefence\HWIDsUtils.cpp">
+      <Filter>AvanguardDefence\HWIDs</Filter>
+    </ClCompile>
+    <ClCompile Include="AvanguardDefence\JavaBindings.cpp">
+      <Filter>AvanguardDefence\JavaSupport\JavaBindings</Filter>
+    </ClCompile>
+    <ClCompile Include="HoShiMin%27s API\CodepageAPI.cpp">
+      <Filter>HoShiMin%27s API</Filter>
+    </ClCompile>
+    <ClCompile Include="AvanguardDefence\ThreatElimination.cpp">
+      <Filter>AvanguardDefence\ThreatEliminating</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="AvanguardDefence\SupportedOS.manifest">
@@ -428,6 +485,9 @@
     </Library>
     <Library Include="Zydis\Zydis.x86.lib">
       <Filter>Zydis</Filter>
+    </Library>
+    <Library Include="JNI\lib\jvm.lib">
+      <Filter>AvanguardDefence\JavaSupport\JNI\lib</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>

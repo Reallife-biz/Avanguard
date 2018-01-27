@@ -83,12 +83,11 @@ FILTRATION(
 
 BOOL IsMemHooksInitialized = FALSE;
 
-const HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
-const PVOID pNtAllocateVirtualMemory = GetProcAddress(hNtdll, "NtAllocateVirtualMemory");
-const PVOID pNtProtectVirtualMemory = GetProcAddress(hNtdll, "NtProtectVirtualMemory");
-const PVOID pNtFreeVirtualMemory = GetProcAddress(hNtdll, "NtFreeVirtualMemory");
-const PVOID pNtMapViewOfSection = GetProcAddress(hNtdll, "NtMapViewOfSection");
-const PVOID pNtUnmapViewOfSection = GetProcAddress(hNtdll, "NtUnmapViewOfSection");
+const PVOID pNtAllocateVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtAllocateVirtualMemory");
+const PVOID pNtProtectVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtProtectVirtualMemory");
+const PVOID pNtFreeVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtFreeVirtualMemory");
+const PVOID pNtMapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtMapViewOfSection");
+const PVOID pNtUnmapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtUnmapViewOfSection");
 
 HOOK_INFO HooksInfo[] = {
 	INTERCEPTION_ENTRY(pNtAllocateVirtualMemory, NtAllocateVirtualMemory),

@@ -1,12 +1,10 @@
 #include "stdafx.h"
 #include "ApcDispatcher.h"
 
-typedef NTSTATUS (NTAPI *_NtContinue)(
+typedef NTSTATUS(NTAPI *_NtContinue)(
 	IN PCONTEXT	ThreadContext,
 	IN BOOLEAN	RaiseAlert
 );
-
-typedef NTSTATUS (NTAPI *_NtTestAlert)();
 
 const _NtContinue NtContinue = (_NtContinue)GetProcAddress(hModules::hNtdll(), "NtContinue");
 const _NtTestAlert NtTestAlert = (_NtTestAlert)GetProcAddress(hModules::hNtdll(), "NtTestAlert");

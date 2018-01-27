@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include <functional>
+#include <clocale>
 
 #include "AvnDefinitions.h"
 #include "ThreadsFilter.h"
@@ -19,8 +20,11 @@
 #include "DACL.h"
 #include "ModulesUtils.h"
 #include "ContextFilter.h"
+#include "HWIDsUtils.h"
+#include "ThreatElimination.h"
 
 #include "HoShiMin's API\\StringsAPI.h"
+#include "HoShiMin's API\\CodepageAPI.h"
 #include "HoShiMin's API\\ColoredConsole.h"
 #include "HoShiMin's API\\DisasmHelper.h"
 #include "HoShiMin's API\\HookHelper.h"
@@ -33,6 +37,9 @@ extern AVN_API AvnApi;
 extern VOID AvnInitializeApi();
 extern "C" __declspec(dllexport) const PAVN_API Stub = &AvnApi;
 
+BOOL IsAvnStarted = FALSE;
+BOOL IsAvnStaticLoaded = FALSE;
+
 #ifdef DEBUG_OUTPUT
 static HANDLE hLog = CreateFile(L"AvnLog.log", FILE_WRITE_ACCESS, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -42,7 +49,7 @@ void Log(const std::wstring& Text) {
 	static BOOL Initialized = FALSE;
 	static CRITICAL_SECTION CriticalSection;
 	if (!Initialized) {
-		InitializeCriticalSection(&CriticalSection);
+		InitializeCriticalSectionAndSpinCount(&CriticalSection, 0xC0000000);
 		Initialized = TRUE;
 	}
 
@@ -51,6 +58,7 @@ void Log(const std::wstring& Text) {
 	EnterCriticalSection(&CriticalSection);
 	DWORD BytesWritten;
 	WriteFile(hLog, ToWrite.c_str(), (DWORD)ToWrite.length() * sizeof(std::wstring::value_type), &BytesWritten, NULL);
+	FlushFileBuffers(hLog);
 	LeaveCriticalSection(&CriticalSection);
 }
 
@@ -153,7 +161,7 @@ BOOL CALLBACK OnThreadCreated(
 
 	if (!ThreadIsLocal && !(ThreadIsLocal = IsThreadAllowed(EntryPoint))) {
 		Log(L"[x] Thread " + ValToWideStr(GetCurrentThreadId()) + L" is blocked!");
-		__debugbreak();
+		EliminateThreat(avnRemoteThread, NULL);
 	}
 
 #ifdef MITIGATIONS
@@ -193,6 +201,8 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 	if (!IsFileAllowed) BlockedLibs.emplace(NameHash);
 
 	Log(IsFileAllowed ? (L"[v] Module " + Path + L" allowed!") : (L"[x] Module " + Path + L" is blocked!"));
+
+	if (!IsFileAllowed) EliminateThreat(avnWindowsHooksInjection, NULL);
 	return IsFileAllowed;
 }
 #endif
@@ -200,7 +210,7 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 #ifdef STACKTRACE_CHECK
 BOOL CALLBACK OnUnknownTraceLoadLibrary(PVOID Address, PUNICODE_STRING ModuleFileName) {
 	Log(L"[x] Unknown trace entry " + ValToWideHex(Address, 16) + L" on load module " + std::wstring(ModuleFileName->Buffer));
-	__debugbreak();
+	EliminateThreat(avnUnknownTraceLoadLibrary, NULL);
 	return FALSE;
 }
 #endif
@@ -230,7 +240,7 @@ BOOL IsTraceValid() {
 NTSTATUS NTAPI PreNtContinue(IN PBOOL SkipOriginalCall, PCONTEXT Context, BOOL TestAlert) {
 	if (!IsTraceValid()) {
 		Log(L"[x] PreNtContinue detected unknown trace element!");
-		__debugbreak();
+		EliminateThreat(avnContextManipulation, NULL);
 		*SkipOriginalCall = TRUE;
 		return STATUS_ACCESS_DENIED;
 	}
@@ -240,7 +250,7 @@ NTSTATUS NTAPI PreNtContinue(IN PBOOL SkipOriginalCall, PCONTEXT Context, BOOL T
 NTSTATUS NTAPI PreSetContext(IN PBOOL SkipOriginalCall, HANDLE ThreadHandle, PCONTEXT Context) {
 	if (!IsTraceValid()) {
 		Log(L"[x] PreSetContext detected unknown trace element!");
-		__debugbreak();
+		EliminateThreat(avnContextManipulation, NULL);
 		*SkipOriginalCall = TRUE;
 		return STATUS_ACCESS_DENIED;
 	}
@@ -271,11 +281,16 @@ BOOL IsModuleRestricted(LPCWSTR ModuleName) {
 #ifdef TIMERED_CHECKINGS
 VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 	AvnApi.AvnLock();
+	if (!IsAvnStarted) {
+		AvnApi.AvnUnlock();
+		return;
+	}
+
 #ifdef FIND_CHANGED_MODULES
 	ValidModulesStorage.FindChangedModules([](const MODULE_INFO& ModuleInfo) -> bool {
 		if (IsModuleRestricted(ModuleInfo.Name.c_str())) {
 			Log(L"[x] Critical module " + ModuleInfo.Name + L" was changed!");
-			__debugbreak();
+			EliminateThreat(avnCriticalModuleChanged, NULL);
 			return true;
 		}
 		
@@ -323,7 +338,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 		if (ValidModulesHooked)
 			ValidModulesStorage.RecalcModuleHash(hTarget);
 		else
-			__debugbreak();
+			EliminateThreat(avnUnknownInterception, NULL);
 
 		return true;
 	});
@@ -335,7 +350,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 			if (GetModuleBase(MemoryInfo->BaseAddress) == NULL && !VMStorage.IsMemoryInMap(MemoryInfo->BaseAddress)) {
 				Log(L"[x] Unknown memory " + ValToWideHex(MemoryInfo->BaseAddress, 16));
 				DisassembleAndLog(MemoryInfo->BaseAddress, 16);
-				//__debugbreak();
+				EliminateThreat(avnUnknownMemoryRegion, NULL);
 			}
 		}
 		return true;
@@ -359,195 +374,254 @@ BOOL CheckTimeExpired() {
 }
 #endif
 
-static HANDLE TimerQueue;
-static HANDLE TimerHandle;
-
-typedef VOID(WINAPI *_EntryPoint)();
-static _EntryPoint OrgnlEntryPoint = NULL;
-
-VOID WINAPI HkdEntryPoint() {
 #ifdef STRICT_DACLs
+BOOL SetupDACLs() {
 	DACL Dacl(GetCurrentProcess());
-	ULONG AccessRights = 
+	ULONG AccessRights =
 		WRITE_DAC | WRITE_OWNER |
-		PROCESS_CREATE_PROCESS	| PROCESS_CREATE_THREAD		|
-		PROCESS_DUP_HANDLE		| PROCESS_QUERY_INFORMATION |
-		PROCESS_SET_QUOTA		| PROCESS_SET_INFORMATION	|
-		PROCESS_VM_OPERATION	| PROCESS_VM_READ | PROCESS_VM_WRITE |
+		PROCESS_CREATE_PROCESS | PROCESS_CREATE_THREAD |
+		PROCESS_DUP_HANDLE | PROCESS_QUERY_INFORMATION |
+		PROCESS_SET_QUOTA | PROCESS_SET_INFORMATION |
+		PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE |
 		PROCESS_SUSPEND_RESUME;
 	Dacl.Deny(sidCurrentUser, AccessRights);
 	Dacl.Allow(sidEveryone, ~AccessRights & 0x1FFF);
 	Dacl.Allow(sidSystem, PROCESS_ALL_ACCESS);
 	Dacl.Allow(sidAdministrators, PROCESS_ALL_ACCESS);
-	Dacl.Apply();
+	return Dacl.Apply();
+}
 #endif
 
 #ifdef TIMERED_CHECKINGS
-	NTSTATUS Status;
-	if (NT_SUCCESS(Status = RtlCreateTimerQueue(&TimerQueue))) {
-		if (NT_SUCCESS(Status = RtlCreateTimer(
-			TimerQueue,
-			&TimerHandle,
-			TimerCallback,
-			NULL,
-			1000,
-			1000,
-			WT_EXECUTELONGFUNCTION
-		))) {
-			Log(L"[v] Periodic check enabled");
+BOOL OperateTimeredCheckings(BOOL DesiredState) {
+	static HANDLE TimerQueue;
+	static HANDLE TimerHandle;
+	static BOOL Activated = FALSE;
+
+	if (DesiredState == Activated) return TRUE;
+
+	if (DesiredState) {
+		NTSTATUS Status;
+		if (NT_SUCCESS(Status = RtlCreateTimerQueue(&TimerQueue))) {
+			if (NT_SUCCESS(Status = RtlCreateTimer(
+				TimerQueue,
+				&TimerHandle,
+				TimerCallback,
+				NULL,
+				1000,
+				1000,
+				WT_EXECUTELONGFUNCTION
+			))) {
+				Log(L"[v] Periodic check enabled");
+				Activated = TRUE;
+				return TRUE;
+			}
+			else {
+				Log(L"[x] Unable to create timer: " + ValToWideHex(Status, 8));
+				RtlDeleteTimerQueue(TimerQueue);
+			}
 		}
 		else {
-			Log(L"[x] Unable to create timer: " + ValToWideHex(Status, 8));
+			Log(L"[x] Unable to create timer queue: " + ValToWideHex(Status, 8));
 		}
 	}
 	else {
-		Log(L"[x] Unable to create timer queue: " + ValToWideHex(Status, 8));
+		RtlDeleteTimer(TimerQueue, TimerHandle, INVALID_HANDLE_VALUE);
+		RtlDeleteTimerQueue(TimerQueue);
+		Activated = FALSE;
+		return TRUE;
 	}
+	return FALSE;
+}
 #endif
 
-	OrgnlEntryPoint();
+
+BOOL AvnStartDefence() {
+	if (IsAvnStarted) return TRUE;
+	AvnApi.AvnLock();
+
+#ifdef LICENSE_CHECK
+	Log(L"[v] Checking license...");
+	if (CheckTimeExpired()) {
+		Log(L"[x] License expired! Good bye!");
+		return TRUE;
+	}
+	Log(L"[v] License not expired");
+#endif
+
+	if (!IsWindows7OrGreater()) return TRUE; // For safety purposes, temporal
+	Log(L"[v] Win7 or greater");
+
+	SwitchThreadsExecutionStatus(Suspend);
+	Log(L"[i] All threads were stopped");
+
+#ifdef STRICT_DACLs
+	SetupDACLs();
+#endif
+
+#ifdef THREADS_FILTER
+	SetupThreadsFilter(NULL, OnThreadCreated);
+	Log(L"[v] Threads filter setted up!");
+#endif
+
+#ifdef MITIGATIONS
+	// Для корректной работы JIT необходимо включить фильтр потоков!
+	Mitigations::SetProhibitDynamicCode(TRUE);
+	Mitigations::SetThreadAllowedDynamicCode();
+	Log(L"[v] Mitigations enabled!");
+#endif
+
+#ifdef SKIP_APP_INIT_DLLS
+	//if (IsWindows8Point1OrGreater()) PebSetProcessProtected(TRUE, TRUE);
+	AppInitDlls::DisableAppInitDlls();
+	Log(L"[v] AppInitDlls intercepted!");
+#endif
+
+#ifdef MODULES_FILTER
+	ModulesFilter::SetupFilterCallbacks(PreLoadModuleCallback);
+	ModulesFilter::SetupNotificationCallbacks(DllNotificationRoutine);
+	ModulesFilter::EnableModulesFilter();
+	ModulesFilter::EnableDllNotification();
+	Log(L"[v] Modules filters setted up!");
+
+#ifdef WINDOWS_HOOKS_FILTER
+	SetupWindowsHooksFilter(OnWindowsHookLoadLibrary);
+	Log(L"[v] Windows hooks filter setted up!");
+#endif
+#ifdef STACKTRACE_CHECK
+	SetupUnknownTraceLoadCallback(OnUnknownTraceLoadLibrary);
+	Log(L"[v] Stacktrace check on loading modules enabled!");
+#endif
+#endif
+
+#ifdef APC_FILTER
+	ApcDispatcher::EnableApcFilter();
+	ApcDispatcher::SetupApcCallback([](PVOID ApcProc, PVOID RetAddr) -> BOOL {
+		BOOL IsApcAllowed = GetModuleBase(ApcProc) != NULL;
+		Log(IsApcAllowed ? L"[i] Allowed APC queried" : L"[x] APC disallowed!");
+		if (!IsApcAllowed) EliminateThreat(avnUnknownApcDestination, NULL);
+		return IsApcAllowed;
+	});
+	Log(L"[v] APC filters setted up!");
+#endif
+
+#ifdef MEMORY_FILTER
+	SetupMemoryCallbacks(
+		PreNtAllocateVirtualMemory,
+		PostNtAllocateVirtualMemory,
+		PreNtProtectVirtualMemory,
+		PostNtProtectVirtualMemory,
+		PreNtFreeVirtualMemory,
+		PostNtFreeVirtualMemory,
+		PreNtMapViewOfSection,
+		PostNtMapViewOfSection,
+		PreNtUnmapViewOfSection,
+		PostNtUnmapViewOfSection
+	);
+	Log(L"[v] Memory filter setted up!");
+#endif
+
+#ifdef CONTEXT_FILTER
+	ContextFilter::SetupContextCallbacks(PreNtContinue, PreSetContext);
+	ContextFilter::EnableContextFilter();
+	Log(L"[v] Context filter setted up!");
+#endif
+
+#ifdef MODULES_FILTER
+	ValidModulesStorage.RecalcModulesHashes();
+	Log(L"[v] Modules checksums recalculated!");
+#endif
+
+#ifdef MEMORY_FILTER
+	VMStorage.ReloadMemoryRegions();
+	Log(L"[v] Memory regions reloaded!");
+#endif
+
+#ifdef TIMERED_CHECKINGS
+	OperateTimeredCheckings(TRUE);
+#endif
+
+	SwitchThreadsExecutionStatus(Resume);
+	Log(L"[i] All threads were resumed");
+
+	IsAvnStarted = TRUE;
+	AvnApi.AvnUnlock();
+
+	return TRUE;
+}
+
+VOID AvnStopDefence() {
+	if (!IsAvnStarted) return;
+	AvnApi.AvnLock();
+
+#ifdef TIMERED_CHECKINGS
+	OperateTimeredCheckings(FALSE);
+#endif
+
+#ifdef CONTEXT_FILTER
+	ContextFilter::DisableContextFilter();
+#endif
+
+#ifdef APC_FILTER
+	ApcDispatcher::DisableApcFilter();
+#endif
+
+#ifdef MODULES_FILTER		
+	ModulesFilter::DisableDllNotification();
+	ModulesFilter::DisableModulesFilter();
+#endif
+
+#ifdef THREADS_FILTER
+	RemoveThreadsFilter();
+#endif
+
+#ifdef MEMORY_FILTER
+	RemoveMemoryCallbacks();
+#endif
+
+	IsAvnStarted = FALSE;
+	AvnApi.AvnUnlock();
+}
+
+
+typedef NTSTATUS (NTAPI *_NtQueueApcThread) (
+	IN HANDLE               ThreadHandle,
+	IN PIO_APC_ROUTINE      ApcRoutine,
+	IN PVOID                ApcRoutineContext OPTIONAL,
+	IN PIO_STATUS_BLOCK     ApcStatusBlock OPTIONAL,
+	IN ULONG                ApcReserved OPTIONAL
+);
+_NtQueueApcThread NtQueueApcThread = (_NtQueueApcThread)GetProcAddress(hModules::hNtdll(), "NtQueueApcThread");
+
+VOID NTAPI ApcInitialization(
+	IN PVOID ApcContext,
+	IN PIO_STATUS_BLOCK IoStatusBlock,
+	IN ULONG Reserved
+) {
+	Log(L"[v] Startup APC delivered!");
+	AvnStartDefence();
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 	switch (dwReason) {
 	case DLL_PROCESS_ATTACH: {
-		Log(L"[v] Avn loaded successfully!");
-		AvnInitializeApi();
-
-#ifdef LICENSE_CHECK
-		Log(L"[v] Checking license...");
-		if (CheckTimeExpired()) {
-			Log(L"[x] License expired! Good bye!");
-			return TRUE;
-		}
-		Log(L"[v] License not expired");
-#endif
-
-		if (!IsWindows7OrGreater()) return TRUE; // For safety purposes, temporal
-		Log(L"[v] Win7 or greater");
-
 		hModules::_hCurrent = hModule;
-		SwitchThreadsExecutionStatus(Suspend);
-
-		Log(L"[i] All threads were stopped");
-
-#if defined TIMERED_CHECKINGS || defined STRICT_DACLs
-		PEAnalyzer pe(GetModuleHandle(NULL), FALSE);
-		PVOID EntryPoint = pe.GetEntryPoint();
-		MH_Initialize();
-		MH_STATUS MhStatus = MH_CreateHook(EntryPoint, HkdEntryPoint, (LPVOID*)&OrgnlEntryPoint);
-		if (MhStatus == MH_OK) MhStatus = MH_EnableHook(EntryPoint);
-#endif
-
-#ifdef THREADS_FILTER
-		SetupThreadsFilter(NULL, OnThreadCreated);
-		Log(L"[v] Threads filter setted up!");
-#endif
-
-#ifdef MITIGATIONS
-		// Для корректной работы JIT необходимо включить фильтр потоков!
-		Mitigations::SetProhibitDynamicCode(TRUE);
-		Mitigations::SetThreadAllowedDynamicCode();
-		Log(L"[v] Mitigations enabled!");
-#endif
-
-#ifdef SKIP_APP_INIT_DLLS
-		//if (IsWindows8Point1OrGreater()) PebSetProcessProtected(TRUE, TRUE);
-		AppInitDlls::DisableAppInitDlls();
-		Log(L"[v] AppInitDlls intercepted!");
-#endif
-
-#ifdef MODULES_FILTER
-		ModulesFilter::SetupFilterCallbacks(PreLoadModuleCallback);
-		ModulesFilter::SetupNotificationCallbacks(DllNotificationRoutine);
-		ModulesFilter::EnableModulesFilter();
-		ModulesFilter::EnableDllNotification();
-		Log(L"[v] Modules filters setted up!");
-
-#ifdef WINDOWS_HOOKS_FILTER
-		SetupWindowsHooksFilter(OnWindowsHookLoadLibrary);
-		Log(L"[v] Windows hooks filter setted up!");
-#endif
-#ifdef STACKTRACE_CHECK
-		SetupUnknownTraceLoadCallback(OnUnknownTraceLoadLibrary);
-		Log(L"[v] Stacktrace check on loading modules enabled!");
-#endif
-#endif
-
-#ifdef APC_FILTER
-		ApcDispatcher::EnableApcFilter();
-		ApcDispatcher::SetupApcCallback([](PVOID ApcProc, PVOID RetAddr) -> BOOL {
-			BOOL IsApcAllowed = GetModuleBase(ApcProc) != NULL;
-			Log(IsApcAllowed ? L"[i] Allowed APC queried" : L"[x] APC disallowed!");
-			return IsApcAllowed;
-		});
-		Log(L"[v] APC filters setted up!");
-#endif
-
-#ifdef MEMORY_FILTER
-		SetupMemoryCallbacks(
-			PreNtAllocateVirtualMemory,
-			PostNtAllocateVirtualMemory,
-			PreNtProtectVirtualMemory,
-			PostNtProtectVirtualMemory,
-			PreNtFreeVirtualMemory,
-			PostNtFreeVirtualMemory,
-			PreNtMapViewOfSection,
-			PostNtMapViewOfSection,
-			PreNtUnmapViewOfSection,
-			PostNtUnmapViewOfSection
+		IsAvnStaticLoaded = (Context != NULL);
+		AvnInitializeApi();
+		if (IsAvnStaticLoaded) NtQueueApcThread(
+			NtCurrentThread(),
+			(PIO_APC_ROUTINE)ApcInitialization,
+			(PVOID)hModule,
+			NULL,
+			0
 		);
-		Log(L"[v] Memory filter setted up!");
-#endif
-
-#ifdef CONTEXT_FILTER
-		ContextFilter::SetupContextCallbacks(PreNtContinue, PreSetContext);
-		ContextFilter::EnableContextFilter();
-#endif
-
-#ifdef MODULES_FILTER
-		ValidModulesStorage.RecalcModulesHashes();
-		Log(L"[v] Modules checksums recalculated!");
-#endif
-
-#ifdef MEMORY_FILTER
-		VMStorage.ReloadMemoryRegions();
-		Log(L"[v] Memory regions reloaded!");
-#endif
-
-		SwitchThreadsExecutionStatus(Resume);
-		Log(L"[i] All threads were resumed");
 		break;
 	}
 
 	case DLL_PROCESS_DETACH: {
-#ifdef TIMERED_CHECKINGS
-		RtlDeleteTimer(TimerQueue, TimerHandle, INVALID_HANDLE_VALUE);
-		RtlDeleteTimerQueue(TimerQueue);
-#endif
-
-#ifdef CONTEXT_FILTER
-		ContextFilter::DisableContextFilter();
-#endif
-
-#ifdef APC_FILTER
-		ApcDispatcher::DisableApcFilter();
-#endif
-		
-#ifdef MODULES_FILTER		
-		ModulesFilter::DisableDllNotification();
-		ModulesFilter::DisableModulesFilter();
-#endif
-
-#ifdef THREADS_FILTER
-		RemoveThreadsFilter();
-#endif
-		
-#ifdef MEMORY_FILTER
-		RemoveMemoryCallbacks();
-#endif
-
+		AvnStopDefence();
 		Log(L"[v] Avn shutted down. Good bye!");
+		break;
 	}
 	}
 

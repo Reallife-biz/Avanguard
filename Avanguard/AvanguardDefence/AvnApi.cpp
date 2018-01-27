@@ -5,9 +5,36 @@
 #include "WinTrusted.h"
 #include "ModulesCallbacks.h"
 #include "MemoryCallbacks.h"
+#include "HWIDsUtils.h"
+#include "ThreatElimination.h"
 
 AVN_API AvnApi;
 static CRITICAL_SECTION CriticalSection;
+
+extern BOOL AvnStartDefence();
+extern VOID AvnStopDefence();
+extern BOOL IsAvnStarted;
+extern BOOL IsAvnStaticLoaded;
+
+BOOL WINAPI AvnStart() {
+	return AvnStartDefence();
+}
+
+VOID WINAPI AvnStop() {
+	AvnStopDefence();
+}
+
+BOOL WINAPI AvnIsStarted() {
+	return IsAvnStarted;
+}
+
+BOOL WINAPI AvnIsStaticLoaded() {
+	return IsAvnStaticLoaded;
+}
+
+VOID WINAPI AvnEliminateThreat(AVN_THREAT Threat, OPTIONAL PVOID Data) {
+	EliminateThreat(Threat, Data);
+}
 
 VOID WINAPI AvnLock() {
 	EnterCriticalSection(&CriticalSection);
@@ -18,11 +45,19 @@ VOID WINAPI AvnUnlock() {
 }
 
 VOID WINAPI AvnRehashModule(HMODULE hModule) {
+#ifdef MODULES_FILTER
 	ValidModulesStorage.RecalcModuleHash(hModule);
+#else
+	return;
+#endif
 }
 
 BOOL WINAPI AvnIsModuleValid(HMODULE hModule) {
+#ifdef MODULES_FILTER
 	return ValidModulesStorage.IsCodeSectionsValid(hModule);
+#else
+	return TRUE;
+#endif
 }
 
 BOOL WINAPI AvnIsFileProtected(LPCWSTR FilePath) {
@@ -54,8 +89,21 @@ BOOL WINAPI AvnIsAddressAllowed(PVOID Address, BOOL IncludeJitMemory) {
 	return ValidModulesStorage.IsModuleInStorage(hModule);
 }
 
+UINT64 WINAPI AvnGetHWID() {
+	return GetHWID();
+}
+
+UINT64 WINAPI AvnHash(PVOID Data, ULONG Size) {
+	return t1ha(Data, Size, 0x1EE7C0DEC0FFEE);
+}
+
 VOID AvnInitializeApi() {
-	InitializeCriticalSection(&CriticalSection);
+	InitializeCriticalSectionAndSpinCount(&CriticalSection, 0xC0000000);
+	AvnApi.AvnStart = AvnStart;
+	AvnApi.AvnStop = AvnStop;
+	AvnApi.AvnIsStarted = AvnIsStarted;
+	AvnApi.AvnIsStaticLoaded = AvnIsStaticLoaded;
+	AvnApi.AvnEliminateThreat = AvnEliminateThreat;
 	AvnApi.AvnLock = AvnLock;
 	AvnApi.AvnUnlock = AvnUnlock;
 	AvnApi.AvnRehashModule = AvnRehashModule;
@@ -64,4 +112,6 @@ VOID AvnInitializeApi() {
 	AvnApi.AvnIsFileSigned = AvnIsFileSigned;
 	AvnApi.AvnVerifyEmbeddedSignature = AvnVerifyEmbeddedSignature;
 	AvnApi.AvnIsAddressAllowed = AvnIsAddressAllowed;
+	AvnApi.AvnGetHWID = AvnGetHWID;
+	AvnApi.AvnHash = AvnHash;
 }

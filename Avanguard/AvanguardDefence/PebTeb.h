@@ -3,9 +3,15 @@
 #include <Windows.h>
 #include <winternl.h>
 
-
-
 namespace NTDEFINES {
+// For the old SDK support:
+#if (_WIN32_WINNT <= 0x0603)
+	typedef struct _CLIENT_ID {
+		HANDLE UniqueProcess;
+		HANDLE UniqueThread;
+	} CLIENT_ID;
+#endif
+
 	typedef struct _PEB_LDR_DATA {
 		ULONG                   Length;
 		BOOLEAN                 Initialized;

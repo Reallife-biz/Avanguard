@@ -20,6 +20,14 @@ static const _NtTerminateThread NtTerminateThread =
 typedef DWORD (WINAPI *_GetThreadId)(HANDLE hProcess);
 static const _GetThreadId __GetThreadId = (_GetThreadId)GetProcAddress(hModules::hKernel32(), "GetThreadId");
 
+// For the old SDK support:
+#if (_WIN32_WINNT <= 0x0603)
+typedef struct _CLIENT_ID {
+	HANDLE UniqueProcess;
+	HANDLE UniqueThread;
+} CLIENT_ID;
+#endif
+
 INTERCEPTION(VOID, NTAPI, LdrInitializeThunk, PCONTEXT Context) {
 	HANDLE ThreadId = (HANDLE)GetCurrentThreadId();
 

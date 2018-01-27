@@ -3,6 +3,8 @@
 
 MemoryStorage VMStorage;
 
+static const ULONG CurrentProcessId = GetCurrentProcessId();
+
 NTSTATUS NTAPI PreNtAllocateVirtualMemory(
 	OUT		PBOOL		SkipOriginalCall,
 	IN		HANDLE		ProcessHandle,
@@ -24,8 +26,9 @@ NTSTATUS NTAPI PostNtAllocateVirtualMemory(
 	IN		ULONG		AllocationType,
 	IN		ULONG		Protect
 ) {
+	if (GetProcessId(ProcessHandle) != CurrentProcessId) return ReturnValue;
 	if ((NT_SUCCESS(ReturnValue)) && (Protect & EXECUTABLE_MEMORY))
-		VMStorage.ProcessAllocation(*BaseAddress, *RegionSize);
+		VMStorage.ProcessAllocation(*BaseAddress);
 	return ReturnValue;
 }
 
@@ -50,16 +53,19 @@ NTSTATUS NTAPI PostNtProtectVirtualMemory(
 	IN		ULONG		NewAccessProtection,
 	OUT		PULONG		OldAccessProtection
 ) {
+	if (GetProcessId(ProcessHandle) != CurrentProcessId) return ReturnValue;
 	if (NT_SUCCESS(ReturnValue)) {
 		// Неисполняемую сделали исполняемой:
 		if ((NewAccessProtection & EXECUTABLE_MEMORY) && !(*OldAccessProtection & EXECUTABLE_MEMORY)) {
-			VMStorage.ProcessAllocation(*BaseAddress, *NumberOfBytesToProtect);
+			VMStorage.ProcessAllocation(*BaseAddress);
 		}
+/*
 		else
 		// Исполняемую сделали неисполняемой:
 		if (!(NewAccessProtection & EXECUTABLE_MEMORY) && (*OldAccessProtection & EXECUTABLE_MEMORY)) {
-			VMStorage.ProcessFreeing(*BaseAddress, *NumberOfBytesToProtect);
+			VMStorage.ProcessFreeing(*BaseAddress);
 		}
+*/
 	}
 	return ReturnValue;
 }
@@ -83,8 +89,10 @@ NTSTATUS NTAPI PostNtFreeVirtualMemory(
 	IN OUT	PSIZE_T		RegionSize,
 	IN		ULONG		FreeType
 ) {
+	if (GetProcessId(ProcessHandle) != CurrentProcessId) return ReturnValue;
+	if (FreeType != MEM_RELEASE) return ReturnValue;
 	if (NT_SUCCESS(ReturnValue))
-		VMStorage.ProcessFreeing(*BaseAddress, *RegionSize);
+		VMStorage.ProcessFreeing(*BaseAddress);
 	return ReturnValue;
 }
 
@@ -118,8 +126,9 @@ NTSTATUS NTAPI PostNtMapViewOfSection(
 	IN				ULONG			AllocationType,
 	IN				ULONG			Win32Protect
 ) {
+	if (GetProcessId(ProcessHandle) != CurrentProcessId) return ReturnValue;
 	if ((NT_SUCCESS(ReturnValue)) && (Win32Protect & EXECUTABLE_MEMORY)) {
-		VMStorage.ProcessAllocation(*BaseAddress, CommitSize);
+		VMStorage.ProcessAllocation(*BaseAddress);
 	}
 	return ReturnValue;
 }
@@ -138,7 +147,8 @@ NTSTATUS NTAPI PostNtUnmapViewOfSection(
 	IN			HANDLE		ProcessHandle,
 	IN OPTIONAL	PVOID		BaseAddress
 ) {
+	if (GetProcessId(ProcessHandle) != CurrentProcessId) return ReturnValue;
 	if (NT_SUCCESS(ReturnValue))
-		VMStorage.ProcessFreeing(BaseAddress, 0);
+		VMStorage.ProcessFreeing(BaseAddress);
 	return ReturnValue;
 }

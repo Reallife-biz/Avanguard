@@ -1,10 +1,8 @@
 #include "stdafx.h"
 #include "CodepageAPI.h"
 
-using namespace std;
-
-string WideToAnsi(const wstring &WideString, WORD CodePage) {
-	if (WideString.empty()) return string();
+std::string WideToAnsi32(const std::wstring &WideString, WORD CodePage) {
+	if (WideString.empty()) return std::string();
 
 	int Length = WideCharToMultiByte(
 		CodePage,
@@ -17,9 +15,9 @@ string WideToAnsi(const wstring &WideString, WORD CodePage) {
 		NULL
 	);
 
-	if (Length == 0) return string();
+	if (Length == 0) return std::string();
 
-	string Result;
+	std::string Result;
 	Result.resize(Length - 1);
 
 	WideCharToMultiByte(
@@ -36,8 +34,8 @@ string WideToAnsi(const wstring &WideString, WORD CodePage) {
 	return Result;
 }
 
-wstring AnsiToWide(const string &AnsiString, WORD CodePage) {
-	if (AnsiString.empty()) return wstring();
+std::wstring AnsiToWide32(const std::string &AnsiString, WORD CodePage) {
+	if (AnsiString.empty()) return std::wstring();
 
 	int Length = MultiByteToWideChar(
 		CodePage,
@@ -48,9 +46,9 @@ wstring AnsiToWide(const string &AnsiString, WORD CodePage) {
 		0
 	);
 
-	if (Length == 0) return wstring();
+	if (Length == 0) return std::wstring();
 
-	wstring Result;
+	std::wstring Result;
 	Result.resize(Length - 1);
 
 	MultiByteToWideChar(
@@ -65,24 +63,24 @@ wstring AnsiToWide(const string &AnsiString, WORD CodePage) {
 	return Result;
 }
 
-string StrOemToAnsi(const string &String) {
-	if (String.empty()) return string();
+std::string StrOemToAnsi(const std::string &String) {
+	if (String.empty()) return std::string();
 
 	unsigned int Length = (unsigned int)String.length();
 
-	string Result;
+	std::string Result;
 	Result.resize(Length);
 
 	OemToAnsiBuff(String.c_str(), (LPSTR)Result.c_str(), Length);
 	return Result;
 }
 
-string StrAnsiToOem(const string &String) {
-	if (String.empty()) return string();
+std::string StrAnsiToOem(const std::string &String) {
+	if (String.empty()) return std::string();
 
 	unsigned int Length = (unsigned int)String.length();
 
-	string Result;
+	std::string Result;
 	Result.resize(Length);
 
 	AnsiToOemBuff(String.c_str(), (LPSTR)Result.c_str(), Length);
