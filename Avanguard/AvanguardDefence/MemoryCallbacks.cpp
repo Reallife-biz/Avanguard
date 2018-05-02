@@ -96,7 +96,7 @@ NTSTATUS NTAPI PostNtFreeVirtualMemory(
 	return ReturnValue;
 }
 
-
+/*
 NTSTATUS NTAPI PreNtMapViewOfSection(
 	OUT				PBOOL			SkipOriginalCall,
 	IN				HANDLE			SectionHandle,
@@ -152,3 +152,4 @@ NTSTATUS NTAPI PostNtUnmapViewOfSection(
 		VMStorage.ProcessFreeing(BaseAddress);
 	return ReturnValue;
 }
+*/

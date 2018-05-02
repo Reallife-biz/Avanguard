@@ -130,6 +130,9 @@
     <Filter Include="AvanguardDefence\ThreatEliminating">
       <UniqueIdentifier>{daef30ed-f65b-46c7-9132-f85a8f4150b4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AvanguardDefence\Locks">
+      <UniqueIdentifier>{424cf323-88fe-4496-86e6-34e346fc5d88}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -341,6 +344,9 @@
     </ClInclude>
     <ClInclude Include="AvanguardDefence\ThreatElimination.h">
       <Filter>AvanguardDefence\ThreatEliminating</Filter>
+    </ClInclude>
+    <ClInclude Include="AvanguardDefence\Locks.h">
+      <Filter>AvanguardDefence\Locks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

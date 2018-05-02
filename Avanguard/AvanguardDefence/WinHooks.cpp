@@ -12,6 +12,7 @@ BOOL WinHooks::Initialize() {
 	if (KernelCallbackTable == NULL) return FALSE;
 
 	HMODULE hModule = GetModuleBase(*KernelCallbackTable);
+	if (hModule == NULL) return FALSE;
 
 	for (unsigned int i = 0; GetModuleBase(KernelCallbackTable[i]) == hModule; i++)
 		KernelCallbacks.emplace_back(KernelCallbackTable[i]);
@@ -39,7 +40,7 @@ BOOL WinHooks::IsCalledFromWinHook() {
 		for (unsigned short i = 0; i < Captured; i++) {
 			PVOID Address = Ptrs[i];
 			for (size_t j = 0; j < KernelCallbacks.size() - 1; j++) {
-				if ((Address >= KernelCallbacks[j]) && (Address < KernelCallbacks[j + 1])) {
+				if ((Address >= KernelCallbacks[j]) && (Address <= KernelCallbacks[j + 1])) {
 					Status = TRUE;
 					__ClientLoadLibrary = Address;
 					goto AddressFound;

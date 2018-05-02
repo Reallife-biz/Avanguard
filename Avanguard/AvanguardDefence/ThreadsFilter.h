@@ -5,6 +5,7 @@
 
 #include "hModules.h"
 #include "..\\HoShiMin's API\\HookHelper.h"
+#include "Locks.h"
 
 #include <unordered_set>
 

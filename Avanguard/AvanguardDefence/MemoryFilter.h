@@ -59,7 +59,8 @@ typedef NTSTATUS (CALLBACK *_FreeMemoryPostCallback) (
 	IN		ULONG		FreeType
 );
 
-
+// Because of possible loader-locks we shouldn't filtrate the NtMap[Unmap]ViewOfSection!
+/*
 enum SECTION_INHERIT {
 	ViewShare,
 	ViewUnmap
@@ -104,6 +105,8 @@ typedef NTSTATUS (CALLBACK *_UnmapMemoryPostCallback) (
 	IN			HANDLE		ProcessHandle,
 	IN OPTIONAL	PVOID		BaseAddress
 );
+*/
+
 
 BOOL SetupMemoryCallbacks(
 	_AllocMemoryPreCallback		AllocPreCallback,
@@ -111,11 +114,11 @@ BOOL SetupMemoryCallbacks(
 	_ProtectMemoryPreCallback	ProtectPreCallback,
 	_ProtectMemoryPostCallback	ProtectPostCallback,
 	_FreeMemoryPreCallback		FreePreCallback,
-	_FreeMemoryPostCallback		FreePostCallback,
-	_MapMemoryPreCallback		MapPreCallback,
-	_MapMemoryPostCallback		MapPostCallback,
-	_UnmapMemoryPreCallback		UnmapPreCallback,
-	_UnmapMemoryPostCallback	UnmapPostCallback
+	_FreeMemoryPostCallback		FreePostCallback
+	//_MapMemoryPreCallback		MapPreCallback,
+	//_MapMemoryPostCallback	MapPostCallback,
+	//_UnmapMemoryPreCallback	UnmapPreCallback,
+	//_UnmapMemoryPostCallback	UnmapPostCallback
 );
 
 VOID RemoveMemoryCallbacks();

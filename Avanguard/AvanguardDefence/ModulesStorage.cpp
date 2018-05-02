@@ -5,7 +5,6 @@
 #include <apiset.h>
 
 ModulesStorage::ModulesStorage(BOOL CollectModulesInfo) {
-	InitializeCriticalSectionAndSpinCount(&CriticalSection, 0xC0000000);
 	if (CollectModulesInfo) FillModulesInfo();
 }
 
@@ -130,9 +129,9 @@ void ModulesStorage::RemoveModule(HMODULE hModule) {
 }
 
 void ModulesStorage::Lock() {
-	EnterCriticalSection(&CriticalSection);
+	Locker.Lock();
 }
 
 void ModulesStorage::Unlock() {
-	LeaveCriticalSection(&CriticalSection);
+	Locker.Unlock();
 }

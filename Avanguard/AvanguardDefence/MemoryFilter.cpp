@@ -2,7 +2,8 @@
 #include "MemoryFilter.h"
 
 
-
+// Because of possible loader-locks we shouldn't filtrate the NtMap[Unmap]ViewOfSection!
+/*
 FILTRATION(
 	NTSTATUS, NTAPI, NtMapViewOfSection,
 	IN				HANDLE			SectionHandle,
@@ -35,6 +36,7 @@ FILTRATION(
 	);
 	return Status;
 }
+*/
 
 FILTRATION(
 	NTSTATUS, NTAPI, NtAllocateVirtualMemory,
@@ -51,6 +53,8 @@ FILTRATION(
 	);
 	return Status;
 }
+
+
 
 FILTRATION(
 	NTSTATUS, NTAPI, NtProtectVirtualMemory,
@@ -86,15 +90,15 @@ BOOL IsMemHooksInitialized = FALSE;
 const PVOID pNtAllocateVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtAllocateVirtualMemory");
 const PVOID pNtProtectVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtProtectVirtualMemory");
 const PVOID pNtFreeVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtFreeVirtualMemory");
-const PVOID pNtMapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtMapViewOfSection");
-const PVOID pNtUnmapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtUnmapViewOfSection");
+//const PVOID pNtMapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtMapViewOfSection");
+//const PVOID pNtUnmapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtUnmapViewOfSection");
 
 HOOK_INFO HooksInfo[] = {
 	INTERCEPTION_ENTRY(pNtAllocateVirtualMemory, NtAllocateVirtualMemory),
 	INTERCEPTION_ENTRY(pNtProtectVirtualMemory, NtProtectVirtualMemory),
 	INTERCEPTION_ENTRY(pNtFreeVirtualMemory, NtFreeVirtualMemory),
-	INTERCEPTION_ENTRY(pNtMapViewOfSection, NtMapViewOfSection),
-	INTERCEPTION_ENTRY(pNtUnmapViewOfSection, NtUnmapViewOfSection)
+	//INTERCEPTION_ENTRY(pNtMapViewOfSection, NtMapViewOfSection),
+	//INTERCEPTION_ENTRY(pNtUnmapViewOfSection, NtUnmapViewOfSection)
 };
 
 BOOL SetupMemoryCallbacks(
@@ -103,17 +107,17 @@ BOOL SetupMemoryCallbacks(
 	_ProtectMemoryPreCallback	ProtectPreCallback,
 	_ProtectMemoryPostCallback	ProtectPostCallback,
 	_FreeMemoryPreCallback		FreePreCallback,
-	_FreeMemoryPostCallback		FreePostCallback,
-	_MapMemoryPreCallback		MapPreCallback,
-	_MapMemoryPostCallback		MapPostCallback,
-	_UnmapMemoryPreCallback		UnmapPreCallback,
-	_UnmapMemoryPostCallback	UnmapPostCallback
+	_FreeMemoryPostCallback		FreePostCallback
+	//_MapMemoryPreCallback		MapPreCallback,
+	//_MapMemoryPostCallback	MapPostCallback,
+	//_UnmapMemoryPreCallback	UnmapPreCallback,
+	//_UnmapMemoryPostCallback	UnmapPostCallback
 ) {
 	DEFINE_FILTERS(NtAllocateVirtualMemory, AllocPreCallback, AllocPostCallback);
 	DEFINE_FILTERS(NtProtectVirtualMemory, ProtectPreCallback, ProtectPostCallback);
 	DEFINE_FILTERS(NtFreeVirtualMemory, FreePreCallback, FreePostCallback);
-	DEFINE_FILTERS(NtMapViewOfSection, MapPreCallback, MapPostCallback);
-	DEFINE_FILTERS(NtUnmapViewOfSection, UnmapPreCallback, UnmapPostCallback);
+	//DEFINE_FILTERS(NtMapViewOfSection, MapPreCallback, MapPostCallback);
+	//DEFINE_FILTERS(NtUnmapViewOfSection, UnmapPreCallback, UnmapPostCallback);
 
 	if (IsMemHooksInitialized) return TRUE;
 

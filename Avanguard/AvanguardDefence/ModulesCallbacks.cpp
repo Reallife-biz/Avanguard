@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "ModulesCallbacks.h"
 
+#include "AvnApi.h"
+extern AVN_API AvnApi;
+
 ModulesStorage ValidModulesStorage(TRUE);
 
 static _OnWindowsHookLoad WinHookLoadCallback;
@@ -13,6 +16,8 @@ NTSTATUS CALLBACK PreLoadModuleCallback(
 	IN PUNICODE_STRING	ModuleFileName,
 	OUT PHANDLE			ModuleHandle
 ) {
+	AvnApi.AvnLock();
+
 #if defined WINDOWS_HOOKS_FILTER || defined STACKTRACE_CHECK
 	__declspec(thread) static unsigned int LoadingCount = 0;
 
@@ -47,6 +52,8 @@ NTSTATUS CALLBACK PreLoadModuleCallback(
 		LoadingCount--;
 	}
 #endif
+
+	AvnApi.AvnUnlock();
 	return STATUS_SUCCESS;
 }
 

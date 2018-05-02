@@ -100,6 +100,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -128,6 +129,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -192,7 +194,6 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <StringPooling>true</StringPooling>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
@@ -232,6 +233,7 @@
     <ClInclude Include="AvanguardDefence\JavaBindings.h" />
     <ClInclude Include="AvanguardDefence\KernelUtils.h" />
     <ClInclude Include="AvanguardDefence\KeSecuredMemory.h" />
+    <ClInclude Include="AvanguardDefence\Locks.h" />
     <ClInclude Include="AvanguardDefence\MemoryCallbacks.h" />
     <ClInclude Include="AvanguardDefence\MemoryFilter.h" />
     <ClInclude Include="AvanguardDefence\MemoryStorage.h" />

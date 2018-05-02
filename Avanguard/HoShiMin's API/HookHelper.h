@@ -46,6 +46,52 @@ MH_CreateHook(Address, (LPVOID)Hkd##FunctionName, (LPVOID*)&Orgnl##FunctionName)
 #define ENABLE_HOOK(Address) \
 MH_EnableHook(Address)
 
+class HookStorage final {
+private:
+	BOOL Enabled;
+	PVOID Target;
+	PVOID Detour;
+	PVOID Original;
+public:
+	HookStorage(PVOID TargetFunction, PVOID DetourFunction, BOOL InitialState = TRUE) : Enabled(FALSE) {
+		Target = TargetFunction;
+		Detour = DetourFunction;
+		MH_Initialize();
+		MH_CreateHook(Target, Detour, &Original);
+		if (InitialState) Enable();
+	}
+
+	~HookStorage() {
+		Disable();
+		MH_RemoveHook(Target);
+	}
+
+	PVOID GetTargetAddress() const { return Target; }
+	PVOID GetDetourAddress() const { return Detour; }
+	PVOID GetOriginalAddress() const { return Original; }
+
+	BOOL IsEnabled() const { return Enabled; }
+
+	BOOL Enable() {
+		return Enabled = MH_EnableHook(Target) == MH_OK;
+	}
+
+	BOOL Disable() {
+		return !(Enabled = !(MH_DisableHook(Target) == MH_OK));
+	}
+};
+
+
+#define Hook(ReturnType, Convention, FunctionName, Address, InitialState, ...)	\
+	typedef ReturnType(Convention *_##FunctionName) (__VA_ARGS__);	\
+	static ReturnType Convention Hkd##FunctionName(__VA_ARGS__);	\
+	HookStorage HkStrg##FunctionName(Address, Hkd##FunctionName, InitialState);	\
+	static ReturnType Convention Hkd##FunctionName(__VA_ARGS__)
+
+#define OriginalCall(FunctionName, ...) ((_##FunctionName)((HkStrg##FunctionName).GetOriginalAddress()))(__VA_ARGS__)
+#define EnableHook(FunctionName) (HkStrg##FunctionName).Enable()
+#define DisableHook(FunctionName) (HkStrg##FunctionName).Disable()
+
 #define INTERCEPTION(ReturnType, Convention, FunctionName, ...)		\
 	typedef ReturnType (Convention *_##FunctionName) (__VA_ARGS__);	\
 	static _##FunctionName Orgnl##FunctionName;						\

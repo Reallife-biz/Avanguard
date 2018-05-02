@@ -60,6 +60,7 @@ NTSTATUS NTAPI PostNtFreeVirtualMemory(
 	IN		ULONG		FreeType
 );
 
+/*
 NTSTATUS NTAPI PreNtMapViewOfSection(
 	OUT				PBOOL			SkipOriginalCall,
 	IN				HANDLE			SectionHandle,
@@ -99,3 +100,4 @@ NTSTATUS NTAPI PostNtUnmapViewOfSection(
 	IN			HANDLE		ProcessHandle,
 	IN OPTIONAL	PVOID		BaseAddress
 );
+*/

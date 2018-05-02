@@ -25,7 +25,7 @@ Both x32 and x64 supports and includes:
 All you need is to load Avanguard.dll as soon as possible.  
 It collects all information about consistence of process, sets up the memory, threads, APCs and modules filters and starts up the protection.  
   
-You can use the AvnAPI using this code:  
+You can use the AvnApi in Java using this code:  
 ```
 #include "AvnApi.h"
 
@@ -49,7 +49,6 @@ You should always use the _Lock()_/_Unlock()_ to AvnApi calls!
 Java bindings:
 ```
 public class Main {
-
     public static void main(String[] args) {
         AvnBind.avnRegisterThreatNotifier((int threatType) -> {
             System.out.println("Threat " + AvnBind.ThreatType.getThreat(threatType).name());
@@ -63,4 +62,23 @@ public class Main {
     }
 }
 ```
-Note, that you shall not rename the package name!
+Note, that you shall not rename the package name!  
+  
+C# bindings:
+```
+using ...;
+using AvnApi;
+
+namespace AvnSample
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            AvnApi.AvnApi.Load(@"Avanguard.dll");
+            AvnApi.AvnApi.API.AvnStart();
+            while (true) ;
+        }
+    }
+}
+```

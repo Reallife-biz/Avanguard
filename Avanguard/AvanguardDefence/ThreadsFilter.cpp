@@ -4,22 +4,6 @@
 #pragma warning(push)
 #pragma warning(disable: 4312)
 
-typedef NTSTATUS (NTAPI *_NtTerminateThread)(HANDLE hThread, NTSTATUS ExitStatus);
-
-static BOOL IsThreadsHooksInitialized = FALSE;
-
-static _ThreadCreatedCallback OnThreadCreate = NULL;
-static _ValidThreadCreatedCallback OnValidThreadCreate = NULL;
-
-static CRITICAL_SECTION CriticalSection;
-static std::unordered_set<HANDLE> LocalThreads;
-
-static const _NtTerminateThread NtTerminateThread =
-	(_NtTerminateThread)GetProcAddress(hModules::hNtdll(), "NtTerminateThread");
-
-typedef DWORD (WINAPI *_GetThreadId)(HANDLE hProcess);
-static const _GetThreadId __GetThreadId = (_GetThreadId)GetProcAddress(hModules::hKernel32(), "GetThreadId");
-
 // For the old SDK support:
 #if (_WIN32_WINNT <= 0x0603)
 typedef struct _CLIENT_ID {
@@ -28,13 +12,33 @@ typedef struct _CLIENT_ID {
 } CLIENT_ID;
 #endif
 
+namespace {
+	BOOL IsThreadsHooksInitialized = FALSE;
+
+	_ThreadCreatedCallback OnThreadCreate = NULL;
+	_ValidThreadCreatedCallback OnValidThreadCreate = NULL;
+
+	CSLock Locker;
+	std::unordered_set<HANDLE> LocalThreads;
+
+	typedef NTSTATUS(NTAPI *_NtTerminateThread)(HANDLE hThread, NTSTATUS ExitStatus);
+	const _NtTerminateThread NtTerminateThread =
+		(_NtTerminateThread)GetProcAddress(hModules::hNtdll(), "NtTerminateThread");
+
+	typedef DWORD(WINAPI *_GetThreadId)(HANDLE hProcess);
+	const _GetThreadId __GetThreadId = 
+		(_GetThreadId)GetProcAddress(hModules::hKernel32(), "GetThreadId");
+}
+
+
+
 INTERCEPTION(VOID, NTAPI, LdrInitializeThunk, PCONTEXT Context) {
 	HANDLE ThreadId = (HANDLE)GetCurrentThreadId();
 
-	EnterCriticalSection(&CriticalSection);
+	Locker.Lock();
 	BOOL IsLocalThread = LocalThreads.find(ThreadId) != LocalThreads.end();
 	BOOL Allow = OnThreadCreate ? OnThreadCreate(Context, IsLocalThread) : IsLocalThread;
-	LeaveCriticalSection(&CriticalSection);
+	Locker.Unlock();
 
 	if (!Allow) {
 		NtTerminateThread(GetCurrentThread(), 0);
@@ -62,7 +66,7 @@ INTERCEPTION(NTSTATUS, NTAPI, NtCreateThread,
 	IN PINITIAL_TEB			InitialTeb,
 	IN BOOLEAN				CreateSuspended
 ) {
-	EnterCriticalSection(&CriticalSection);
+	Locker.Lock();
 
 	CLIENT_ID LocalClientId = { 0 };
 	NTSTATUS Status = OrgnlNtCreateThread(
@@ -87,7 +91,7 @@ INTERCEPTION(NTSTATUS, NTAPI, NtCreateThread,
 	}
 	if (ClientId) *ClientId = LocalClientId;
 
-	LeaveCriticalSection(&CriticalSection);
+	Locker.Unlock();
 
 	return Status;
 }
@@ -119,7 +123,7 @@ INTERCEPTION(NTSTATUS, NTAPI, NtCreateThreadEx,
 	IN  SIZE_T					SizeOfstackReserve,
 	OUT PTHREAD_INFO			ThreadInfo
 ) {
-	EnterCriticalSection(&CriticalSection);
+	Locker.Lock();
 
 	NTSTATUS Status = OrgnlNtCreateThreadEx(
 		ThreadHandle,
@@ -141,7 +145,7 @@ INTERCEPTION(NTSTATUS, NTAPI, NtCreateThreadEx,
 		if (OnValidThreadCreate) OnValidThreadCreate(ThreadId, lpStartAddress, lpParameter);
 	}
 	
-	LeaveCriticalSection(&CriticalSection);
+	Locker.Unlock();
 	return Status;
 }
 
@@ -154,18 +158,18 @@ INTERCEPTION(NTSTATUS, NTAPI, NtTerminateThread,
 	BOOL IsCurrentThread = ThreadId == (HANDLE)GetCurrentThreadId();
 
 	BOOL ThreadExists;
-	EnterCriticalSection(&CriticalSection);
+	Locker.Lock();
 	ThreadExists = LocalThreads.find(ThreadId) != LocalThreads.end();
 	if (ThreadExists) LocalThreads.erase(ThreadId);
-	LeaveCriticalSection(&CriticalSection);
+	Locker.Unlock();
 
 	NTSTATUS Status = OrgnlNtTerminateThread(ThreadHandle, ExitStatus);
 
 	if (!NT_SUCCESS(Status)) {
 		if (ThreadExists) {
-			EnterCriticalSection(&CriticalSection);
+			Locker.Lock();
 			LocalThreads.emplace(ThreadId);
-			LeaveCriticalSection(&CriticalSection);
+			Locker.Unlock();
 		}
 	}
 
@@ -195,7 +199,6 @@ BOOL SetupThreadsFilter(
 
 	if (!IsThreadsHooksInitialized) {
 		LocalThreads.clear();
-		InitializeCriticalSectionAndSpinCount(&CriticalSection, 0xC0000000);
 		IsThreadsHooksInitialized = HookEmAll(ThreadsHooksInfo, sizeof(ThreadsHooksInfo) / sizeof(ThreadsHooksInfo[0]));
 	}
 	return IsThreadsHooksInitialized;

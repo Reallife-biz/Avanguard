@@ -334,7 +334,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 			}
 		}
 
-		// Если перехватили доверенные модули:
+		// Если перехват совершили из доверенных модулей:
 		if (ValidModulesHooked)
 			ValidModulesStorage.RecalcModuleHash(hTarget);
 		else
@@ -435,10 +435,15 @@ BOOL OperateTimeredCheckings(BOOL DesiredState) {
 }
 #endif
 
+/*
+Hook(BOOL, WINAPI, ExitProcess, &ExitProcess, TRUE, ULONG ExitStatus) {
+	OriginalCall(ExitProcess, 0);
+	return FALSE;
+}
+*/
 
 BOOL AvnStartDefence() {
 	if (IsAvnStarted) return TRUE;
-	AvnApi.AvnLock();
 
 #ifdef LICENSE_CHECK
 	Log(L"[v] Checking license...");
@@ -512,11 +517,11 @@ BOOL AvnStartDefence() {
 		PreNtProtectVirtualMemory,
 		PostNtProtectVirtualMemory,
 		PreNtFreeVirtualMemory,
-		PostNtFreeVirtualMemory,
-		PreNtMapViewOfSection,
-		PostNtMapViewOfSection,
-		PreNtUnmapViewOfSection,
-		PostNtUnmapViewOfSection
+		PostNtFreeVirtualMemory
+		// PreNtMapViewOfSection,
+		// PostNtMapViewOfSection,
+		// PreNtUnmapViewOfSection,
+		// PostNtUnmapViewOfSection
 	);
 	Log(L"[v] Memory filter setted up!");
 #endif
@@ -541,11 +546,10 @@ BOOL AvnStartDefence() {
 	OperateTimeredCheckings(TRUE);
 #endif
 
+	IsAvnStarted = TRUE;
+
 	SwitchThreadsExecutionStatus(Resume);
 	Log(L"[i] All threads were resumed");
-
-	IsAvnStarted = TRUE;
-	AvnApi.AvnUnlock();
 
 	return TRUE;
 }
@@ -602,9 +606,22 @@ VOID NTAPI ApcInitialization(
 	AvnStartDefence();
 }
 
+LONG CALLBACK ExceptionHandler(IN PEXCEPTION_POINTERS ExceptionInfo) {
+	PEXCEPTION_RECORD ExceptionRecord = ExceptionInfo->ExceptionRecord;
+	Log(
+		std::wstring(L"[x] Exception catched!\r\n") +
+		L"\tCode: " + ValToWideHex(ExceptionRecord->ExceptionCode, 8) + L"\r\n" +
+		L"\tAddress: " + ValToWideHex(ExceptionRecord->ExceptionAddress, sizeof(SIZE_T) * 2) +
+		L"\tModule: " + GetModuleName(ExceptionRecord->ExceptionAddress)
+	);
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 	switch (dwReason) {
 	case DLL_PROCESS_ATTACH: {
+		//AddVectoredExceptionHandler(TRUE, ExceptionHandler);
+		Log(L"[v] Avn initial phase");
 		hModules::_hCurrent = hModule;
 		IsAvnStaticLoaded = (Context != NULL);
 		AvnInitializeApi();

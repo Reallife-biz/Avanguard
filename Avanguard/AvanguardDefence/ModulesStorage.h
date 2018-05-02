@@ -3,6 +3,7 @@
 #include "PebTeb.h"
 #include "PEAnalyzer.h"
 #include "ModulesUtils.h"
+#include "Locks.h"
 
 #include "..\\t1ha\\t1ha.h"
 #include "..\\HoShiMin's API\\StringsAPI.h"
@@ -28,7 +29,7 @@ typedef std::function<bool(const MODULE_INFO& ModuleInfo)> OnChangedModuleCallba
 
 class ModulesStorage {
 private:
-	CRITICAL_SECTION CriticalSection;
+	CSLock Locker;
 
 	const std::wstring DllPostfix = std::wstring(L".dll");
 	const std::wstring ExePostfix = std::wstring(L".exe");
