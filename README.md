@@ -25,7 +25,7 @@ Both x32 and x64 supports and includes:
 All you need is to load Avanguard.dll as soon as possible.  
 It collects all information about consistence of process, sets up the memory, threads, APCs and modules filters and starts up the protection.  
   
-You can use the AvnApi in Java using this code:  
+You can use the AvnApi in C++ or any other native language using this code:  
 ```
 #include "AvnApi.h"
 
