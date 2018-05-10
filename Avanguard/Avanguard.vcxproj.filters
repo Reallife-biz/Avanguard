@@ -133,6 +133,12 @@
     <Filter Include="AvanguardDefence\Locks">
       <UniqueIdentifier>{424cf323-88fe-4496-86e6-34e346fc5d88}</UniqueIdentifier>
     </Filter>
+    <Filter Include="xorstr">
+      <UniqueIdentifier>{b367007d-0b07-41ec-ac61-0d5bf602450d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AvanguardDefence\Remapping">
+      <UniqueIdentifier>{41b12e1b-6447-4043-ab06-78229bb6773f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -348,6 +354,12 @@
     <ClInclude Include="AvanguardDefence\Locks.h">
       <Filter>AvanguardDefence\Locks</Filter>
     </ClInclude>
+    <ClInclude Include="xorstr\xorstr.hpp">
+      <Filter>xorstr</Filter>
+    </ClInclude>
+    <ClInclude Include="AvanguardDefence\Remapping.h">
+      <Filter>AvanguardDefence\Remapping</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -466,6 +478,9 @@
     </ClCompile>
     <ClCompile Include="AvanguardDefence\ThreatElimination.cpp">
       <Filter>AvanguardDefence\ThreatEliminating</Filter>
+    </ClCompile>
+    <ClCompile Include="AvanguardDefence\Remapping.cpp">
+      <Filter>AvanguardDefence\Remapping</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

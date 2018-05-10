@@ -93,11 +93,9 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;AVANGUARD_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <StringPooling>true</StringPooling>
@@ -120,12 +118,9 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Custom</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;AVANGUARD_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <OmitFramePointers>false</OmitFramePointers>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <ControlFlowGuard>false</ControlFlowGuard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -247,6 +242,7 @@
     <ClInclude Include="AvanguardDefence\PebTeb.h" />
     <ClInclude Include="AvanguardDefence\PEUtils.h" />
     <ClInclude Include="AvanguardDefence\ProcessAPI.h" />
+    <ClInclude Include="AvanguardDefence\Remapping.h" />
     <ClInclude Include="AvanguardDefence\ThreadsFilter.h" />
     <ClInclude Include="AvanguardDefence\ThreatElimination.h" />
     <ClInclude Include="AvanguardDefence\ThreatTypes.h" />
@@ -265,6 +261,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="t1ha\t1ha.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="xorstr\xorstr.hpp" />
     <ClInclude Include="Zydis\ZydisExportConfig.h" />
     <ClInclude Include="Zydis\Zydis\CommonTypes.h" />
     <ClInclude Include="Zydis\Zydis\Decoder.h" />
@@ -318,6 +315,7 @@
     <ClCompile Include="AvanguardDefence\PEAnalyzer.cpp" />
     <ClCompile Include="AvanguardDefence\PEUtils.cpp" />
     <ClCompile Include="AvanguardDefence\ProcessAPI.cpp" />
+    <ClCompile Include="AvanguardDefence\Remapping.cpp" />
     <ClCompile Include="AvanguardDefence\ThreadsFilter.cpp" />
     <ClCompile Include="AvanguardDefence\ThreatElimination.cpp" />
     <ClCompile Include="AvanguardDefence\TLS.cpp" />

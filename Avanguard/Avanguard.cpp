@@ -22,6 +22,7 @@
 #include "ContextFilter.h"
 #include "HWIDsUtils.h"
 #include "ThreatElimination.h"
+#include "Remapping.h"
 
 #include "HoShiMin's API\\StringsAPI.h"
 #include "HoShiMin's API\\CodepageAPI.h"
@@ -32,6 +33,18 @@
 #include <time.h>
 #include <intrin.h>
 
+#ifdef SELF_REMAPPING
+// Be ready for self-remapping code:
+#pragma comment(linker, "/ALIGN:65536")
+#endif
+
+#ifdef _DEBUG
+#define XORSTR(Text) (Text)
+#else
+#include "xorstr\\xorstr.hpp"
+#define XORSTR(Text) (xorstr(Text).crypt_get())
+#endif
+
 #include "AvnApi.h"
 extern AVN_API AvnApi;
 extern VOID AvnInitializeApi();
@@ -41,7 +54,7 @@ BOOL IsAvnStarted = FALSE;
 BOOL IsAvnStaticLoaded = FALSE;
 
 #ifdef DEBUG_OUTPUT
-static HANDLE hLog = CreateFile(L"AvnLog.log", FILE_WRITE_ACCESS, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+static HANDLE hLog = CreateFile(XORSTR(L"AvnLog.log"), FILE_WRITE_ACCESS, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 void Log(const std::wstring& Text) {
 	if (hLog == INVALID_HANDLE_VALUE) return;
@@ -53,7 +66,7 @@ void Log(const std::wstring& Text) {
 		Initialized = TRUE;
 	}
 
-	std::wstring ToWrite = L"[PID: " + ValToWideStr(GetCurrentProcessId()) + L"] " + Text + L"\r\n";
+	std::wstring ToWrite = XORSTR(L"[PID: ") + ValToWideStr(GetCurrentProcessId()) + XORSTR(L"] ") + Text + L"\r\n";
 
 	EnterCriticalSection(&CriticalSection);
 	DWORD BytesWritten;
@@ -78,6 +91,13 @@ VOID DisassembleAndLog(PVOID Address, BYTE InstructionsCount) {
 #define DisassembleAndLog(Address, InstructionsCount)
 #endif
 
+#ifdef SELF_REMAPPING
+VOID RemapAvnExecutableSections() {
+	BOOL Status = RemapModule(hModules::hCurrent(), TRUE);
+	Log(Status ? XORSTR(L"[v] Module successfully remapped") : XORSTR(L"[x] Unable to remap module!"));
+}
+#endif
+
 #ifdef TIMERED_CHECKINGS
 typedef NTSTATUS (NTAPI *_RtlCreateTimerQueue)(
 	_Out_ PHANDLE TimerQueueHandle
@@ -90,7 +110,7 @@ typedef NTSTATUS (NTAPI *_RtlDeleteTimerQueue)(
 typedef NTSTATUS (NTAPI *_RtlCreateTimer)(
 	_In_ HANDLE 	TimerQueueHandle,
 	_Out_ PHANDLE 	Handle,
-	_In_ WAITORTIMERCALLBACKFUNC 	Function,
+	_In_ WAITORTIMERCALLBACKFUNC Function,
 	_In_ PVOID 	Context,
 	_In_ DWORD 	DueTime,
 	_In_ DWORD 	Period,
@@ -160,7 +180,7 @@ BOOL CALLBACK OnThreadCreated(
 #endif
 
 	if (!ThreadIsLocal && !(ThreadIsLocal = IsThreadAllowed(EntryPoint))) {
-		Log(L"[x] Thread " + ValToWideStr(GetCurrentThreadId()) + L" is blocked!");
+		Log(XORSTR(L"[x] Thread ") + ValToWideStr(GetCurrentThreadId()) + XORSTR(L" is blocked!"));
 		EliminateThreat(avnRemoteThread, NULL);
 	}
 
@@ -181,26 +201,26 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 	UINT64 NameHash = t1ha(Name.c_str(), Name.length() * sizeof(std::wstring::value_type), 0x1EE7C0DEC0FFEE);
 	if (BlockedLibs.find(NameHash) != BlockedLibs.end()) return FALSE;
 	
-	Log(L"[!] Attempt to load " + Path + L" through the windows hooks!");
+	Log(XORSTR(L"[!] Attempt to load ") + Path + XORSTR(L" through the windows hooks!"));
 
 	BOOL IsFileAllowed = SfcIsFileProtected(NULL, ModuleFileName->Buffer);
-	Log(IsFileAllowed ? (L"[v] Module " + Path + L" allowed!") : (L"[!] Module " + Path + L" not a system module!"));
+	Log(IsFileAllowed ? (XORSTR(L"[v] Module ") + Path + XORSTR(L" allowed!")) : (XORSTR(L"[!] Module ") + Path + XORSTR(L" not a system module!")));
 	if (IsFileAllowed) return TRUE;
 
 	if (!IsFileAllowed) {
-		Log(L"[i] Checking the sign of " + Path + L"...");
+		Log(XORSTR(L"[i] Checking the sign of ") + Path);
 		IsFileAllowed = IsFileSigned(ModuleFileName->Buffer, FALSE) || VerifyEmbeddedSignature(ModuleFileName->Buffer);
 	}
 
 	if (!IsFileAllowed) {
-		Log(L"[i] Checking the path of " + Path + L"...");
+		Log(XORSTR(L"[i] Checking the path of ") + Path);
 		LowerCaseRef(Path);
-		IsFileAllowed = (Path.find(L"system32") != std::wstring::npos) || (Path.find(L"syswow64") != std::wstring::npos);
+		IsFileAllowed = (Path.find(XORSTR(L"system32")) != std::wstring::npos) || (Path.find(XORSTR(L"syswow64")) != std::wstring::npos);
 	}
 
 	if (!IsFileAllowed) BlockedLibs.emplace(NameHash);
 
-	Log(IsFileAllowed ? (L"[v] Module " + Path + L" allowed!") : (L"[x] Module " + Path + L" is blocked!"));
+	Log(IsFileAllowed ? (XORSTR(L"[v] Module ") + Path + XORSTR(L" allowed!")) : (XORSTR(L"[x] Module ") + Path + XORSTR(L" is blocked!")));
 
 	if (!IsFileAllowed) EliminateThreat(avnWindowsHooksInjection, NULL);
 	return IsFileAllowed;
@@ -209,7 +229,7 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 
 #ifdef STACKTRACE_CHECK
 BOOL CALLBACK OnUnknownTraceLoadLibrary(PVOID Address, PUNICODE_STRING ModuleFileName) {
-	Log(L"[x] Unknown trace entry " + ValToWideHex(Address, 16) + L" on load module " + std::wstring(ModuleFileName->Buffer));
+	Log(XORSTR(L"[x] Unknown trace entry ") + ValToWideHex(Address, 16) + XORSTR(L" on load module ") + std::wstring(ModuleFileName->Buffer));
 	EliminateThreat(avnUnknownTraceLoadLibrary, NULL);
 	return FALSE;
 }
@@ -224,12 +244,12 @@ BOOL IsTraceValid() {
 		HMODULE hModule = GetModuleBase(Trace[i]);
 		if (hModule != NULL) {
 			if (!ValidModulesStorage.IsModuleInStorage(hModule)) {
-				Log(L"[x] Context manipulation from unknown module " + GetModuleName(hModule));
+				Log(XORSTR(L"[x] Context manipulation from unknown module ") + GetModuleName(hModule));
 				return FALSE;
 			}
 		} else {
 			if (!VMStorage.IsMemoryInMap(Trace[i])) {
-				Log(L"[x] Context manipulation from unknown memory " + ValToWideHex(Trace[i], 16));
+				Log(XORSTR(L"[x] Context manipulation from unknown memory ") + ValToWideHex(Trace[i], 16));
 				return FALSE;
 			}
 		}
@@ -239,7 +259,7 @@ BOOL IsTraceValid() {
 
 NTSTATUS NTAPI PreNtContinue(IN PBOOL SkipOriginalCall, PCONTEXT Context, BOOL TestAlert) {
 	if (!IsTraceValid()) {
-		Log(L"[x] PreNtContinue detected unknown trace element!");
+		Log(XORSTR(L"[x] PreNtContinue detected unknown trace element!"));
 		EliminateThreat(avnContextManipulation, NULL);
 		*SkipOriginalCall = TRUE;
 		return STATUS_ACCESS_DENIED;
@@ -249,7 +269,7 @@ NTSTATUS NTAPI PreNtContinue(IN PBOOL SkipOriginalCall, PCONTEXT Context, BOOL T
 
 NTSTATUS NTAPI PreSetContext(IN PBOOL SkipOriginalCall, HANDLE ThreadHandle, PCONTEXT Context) {
 	if (!IsTraceValid()) {
-		Log(L"[x] PreSetContext detected unknown trace element!");
+		Log(XORSTR(L"[x] PreSetContext detected unknown trace element!"));
 		EliminateThreat(avnContextManipulation, NULL);
 		*SkipOriginalCall = TRUE;
 		return STATUS_ACCESS_DENIED;
@@ -289,7 +309,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 #ifdef FIND_CHANGED_MODULES
 	ValidModulesStorage.FindChangedModules([](const MODULE_INFO& ModuleInfo) -> bool {
 		if (IsModuleRestricted(ModuleInfo.Name.c_str())) {
-			Log(L"[x] Critical module " + ModuleInfo.Name + L" was changed!");
+			Log(XORSTR(L"[x] Critical module ") + ModuleInfo.Name + XORSTR(L" was changed!"));
 			EliminateThreat(avnCriticalModuleChanged, NULL);
 			return true;
 		}
@@ -308,13 +328,13 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 			if (hModule != NULL) {
 				if (!ValidModulesStorage.IsModuleInStorage(hModule)) {
 					Log(
-						L"[x] Unknown destination module: " +
+						XORSTR(L"[x] Unknown destination module: ") +
 						GetModuleName(hTarget) +
-						L"!" +
+						XORSTR(L"!") +
 						AnsiToWide(Export.Name) +
-						L" -> " +
+						XORSTR(L" -> ") +
 						GetModuleName(hModule) +
-						L"!" +
+						XORSTR(L"!") +
 						ValToWideHex(Destination, 16)
 					);
 					DisassembleAndLog(Destination, 16);
@@ -322,11 +342,11 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 				}
 			} else if (!VMStorage.IsMemoryInMap(Destination)) {
 				Log(
-					L"[x] Unknown hook destination: " + 
+					XORSTR(L"[x] Unknown hook destination: ") + 
 					GetModuleName(hTarget) + 
-					L"!" + 
+					XORSTR(L"!") + 
 					AnsiToWide(Export.Name) + 
-					L" -> " +
+					XORSTR(L" -> ") +
 					ValToWideHex(Destination, 16)
 				);
 				DisassembleAndLog(Destination, 16);
@@ -348,7 +368,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 	EnumerateMemoryRegions(GetCurrentProcess(), [](const PMEMORY_BASIC_INFORMATION MemoryInfo) -> bool {
 		if (MemoryInfo->Protect & EXECUTABLE_MEMORY) {
 			if (GetModuleBase(MemoryInfo->BaseAddress) == NULL && !VMStorage.IsMemoryInMap(MemoryInfo->BaseAddress)) {
-				Log(L"[x] Unknown memory " + ValToWideHex(MemoryInfo->BaseAddress, 16));
+				Log(XORSTR(L"[x] Unknown memory ") + ValToWideHex(MemoryInfo->BaseAddress, 16));
 				DisassembleAndLog(MemoryInfo->BaseAddress, 16);
 				EliminateThreat(avnUnknownMemoryRegion, NULL);
 			}
@@ -360,19 +380,6 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 }
 #endif
 
-
-#ifdef LICENSE_CHECK
-BOOL CheckTimeExpired() {
-	const unsigned char DaysCount = 10;
-	const time_t SecsInDay = 24 * 60 * 60;
-	const time_t Timestamp = 0x5A3B8008;
-	
-	time_t CurrentTime;
-	time(&CurrentTime);
-	
-	return ((CurrentTime - Timestamp) > (DaysCount * SecsInDay));
-}
-#endif
 
 #ifdef STRICT_DACLs
 BOOL SetupDACLs() {
@@ -412,17 +419,17 @@ BOOL OperateTimeredCheckings(BOOL DesiredState) {
 				1000,
 				WT_EXECUTELONGFUNCTION
 			))) {
-				Log(L"[v] Periodic check enabled");
+				Log(XORSTR(L"[v] Periodic check enabled"));
 				Activated = TRUE;
 				return TRUE;
 			}
 			else {
-				Log(L"[x] Unable to create timer: " + ValToWideHex(Status, 8));
+				Log(XORSTR(L"[x] Unable to create timer: ") + ValToWideHex(Status, 8));
 				RtlDeleteTimerQueue(TimerQueue);
 			}
 		}
 		else {
-			Log(L"[x] Unable to create timer queue: " + ValToWideHex(Status, 8));
+			Log(XORSTR(L"[x] Unable to create timer queue: ") + ValToWideHex(Status, 8));
 		}
 	}
 	else {
@@ -435,30 +442,17 @@ BOOL OperateTimeredCheckings(BOOL DesiredState) {
 }
 #endif
 
-/*
-Hook(BOOL, WINAPI, ExitProcess, &ExitProcess, TRUE, ULONG ExitStatus) {
-	OriginalCall(ExitProcess, 0);
-	return FALSE;
-}
-*/
+
 
 BOOL AvnStartDefence() {
 	if (IsAvnStarted) return TRUE;
 
-#ifdef LICENSE_CHECK
-	Log(L"[v] Checking license...");
-	if (CheckTimeExpired()) {
-		Log(L"[x] License expired! Good bye!");
-		return TRUE;
-	}
-	Log(L"[v] License not expired");
-#endif
-
-	if (!IsWindows7OrGreater()) return TRUE; // For safety purposes, temporal
-	Log(L"[v] Win7 or greater");
+	// For safety purposes, temporal:
+	if (!IsWindows7OrGreater()) return TRUE; // It is no more constant things than temporal
+	Log(XORSTR(L"[v] Win7 or greater"));
 
 	SwitchThreadsExecutionStatus(Suspend);
-	Log(L"[i] All threads were stopped");
+	Log(XORSTR(L"[i] All threads were stopped"));
 
 #ifdef STRICT_DACLs
 	SetupDACLs();
@@ -466,20 +460,20 @@ BOOL AvnStartDefence() {
 
 #ifdef THREADS_FILTER
 	SetupThreadsFilter(NULL, OnThreadCreated);
-	Log(L"[v] Threads filter setted up!");
+	Log(XORSTR(L"[v] Threads filter setted up"));
 #endif
 
 #ifdef MITIGATIONS
 	// Для корректной работы JIT необходимо включить фильтр потоков!
 	Mitigations::SetProhibitDynamicCode(TRUE);
 	Mitigations::SetThreadAllowedDynamicCode();
-	Log(L"[v] Mitigations enabled!");
+	Log(XORSTR(L"[v] Mitigations enabled"));
 #endif
 
 #ifdef SKIP_APP_INIT_DLLS
 	//if (IsWindows8Point1OrGreater()) PebSetProcessProtected(TRUE, TRUE);
 	AppInitDlls::DisableAppInitDlls();
-	Log(L"[v] AppInitDlls intercepted!");
+	Log(XORSTR(L"[v] AppInitDlls intercepted"));
 #endif
 
 #ifdef MODULES_FILTER
@@ -487,15 +481,15 @@ BOOL AvnStartDefence() {
 	ModulesFilter::SetupNotificationCallbacks(DllNotificationRoutine);
 	ModulesFilter::EnableModulesFilter();
 	ModulesFilter::EnableDllNotification();
-	Log(L"[v] Modules filters setted up!");
+	Log(XORSTR(L"[v] Modules filters setted up"));
 
 #ifdef WINDOWS_HOOKS_FILTER
 	SetupWindowsHooksFilter(OnWindowsHookLoadLibrary);
-	Log(L"[v] Windows hooks filter setted up!");
+	Log(XORSTR(L"[v] Windows hooks filter setted up"));
 #endif
 #ifdef STACKTRACE_CHECK
 	SetupUnknownTraceLoadCallback(OnUnknownTraceLoadLibrary);
-	Log(L"[v] Stacktrace check on loading modules enabled!");
+	Log(XORSTR(L"[v] Stacktrace check on loading modules enabled"));
 #endif
 #endif
 
@@ -503,11 +497,11 @@ BOOL AvnStartDefence() {
 	ApcDispatcher::EnableApcFilter();
 	ApcDispatcher::SetupApcCallback([](PVOID ApcProc, PVOID RetAddr) -> BOOL {
 		BOOL IsApcAllowed = GetModuleBase(ApcProc) != NULL;
-		Log(IsApcAllowed ? L"[i] Allowed APC queried" : L"[x] APC disallowed!");
+		Log(IsApcAllowed ? XORSTR(L"[i] Allowed APC queried!") : XORSTR(L"[x] APC disallowed!"));
 		if (!IsApcAllowed) EliminateThreat(avnUnknownApcDestination, NULL);
 		return IsApcAllowed;
 	});
-	Log(L"[v] APC filters setted up!");
+	Log(XORSTR(L"[v] APC filters setted up"));
 #endif
 
 #ifdef MEMORY_FILTER
@@ -523,33 +517,37 @@ BOOL AvnStartDefence() {
 		// PreNtUnmapViewOfSection,
 		// PostNtUnmapViewOfSection
 	);
-	Log(L"[v] Memory filter setted up!");
+	Log(XORSTR(L"[v] Memory filter setted up"));
 #endif
 
 #ifdef CONTEXT_FILTER
 	ContextFilter::SetupContextCallbacks(PreNtContinue, PreSetContext);
 	ContextFilter::EnableContextFilter();
-	Log(L"[v] Context filter setted up!");
+	Log(XORSTR(L"[v] Context filter setted up"));
 #endif
 
 #ifdef MODULES_FILTER
 	ValidModulesStorage.RecalcModulesHashes();
-	Log(L"[v] Modules checksums recalculated!");
+	Log(XORSTR(L"[v] Modules checksums recalculated"));
 #endif
 
 #ifdef MEMORY_FILTER
 	VMStorage.ReloadMemoryRegions();
-	Log(L"[v] Memory regions reloaded!");
+	Log(XORSTR(L"[v] Memory regions reloaded"));
 #endif
 
 #ifdef TIMERED_CHECKINGS
 	OperateTimeredCheckings(TRUE);
 #endif
 
+#ifdef SELF_REMAPPING
+	RemapAvnExecutableSections();
+#endif
+
 	IsAvnStarted = TRUE;
 
 	SwitchThreadsExecutionStatus(Resume);
-	Log(L"[i] All threads were resumed");
+	Log(XORSTR(L"[i] All threads were resumed"));
 
 	return TRUE;
 }
@@ -602,42 +600,68 @@ VOID NTAPI ApcInitialization(
 	IN PIO_STATUS_BLOCK IoStatusBlock,
 	IN ULONG Reserved
 ) {
-	Log(L"[v] Startup APC delivered!");
+	Log(XORSTR(L"[v] Startup APC delivered"));
 	AvnStartDefence();
 }
 
 LONG CALLBACK ExceptionHandler(IN PEXCEPTION_POINTERS ExceptionInfo) {
 	PEXCEPTION_RECORD ExceptionRecord = ExceptionInfo->ExceptionRecord;
+	if (GetModuleBase(ExceptionRecord->ExceptionAddress) != hModules::hCurrent()) return EXCEPTION_CONTINUE_SEARCH;
 	Log(
-		std::wstring(L"[x] Exception catched!\r\n") +
-		L"\tCode: " + ValToWideHex(ExceptionRecord->ExceptionCode, 8) + L"\r\n" +
-		L"\tAddress: " + ValToWideHex(ExceptionRecord->ExceptionAddress, sizeof(SIZE_T) * 2) +
-		L"\tModule: " + GetModuleName(ExceptionRecord->ExceptionAddress)
+		std::wstring(XORSTR(L"[x] Exception catched!\r\n")) +
+		XORSTR(L"\tCode: ") + ValToWideHex(ExceptionRecord->ExceptionCode, 8) + L"\r\n" +
+		XORSTR(L"\tAddress: ") + ValToWideHex(ExceptionRecord->ExceptionAddress, sizeof(SIZE_T) * 2) +
+		XORSTR(L"\tModule: ") + GetModuleName(ExceptionRecord->ExceptionAddress)
 	);
+	DisassembleAndLog(ExceptionRecord->ExceptionAddress, 8);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
+
+VOID AvnInitialize(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
+	AddVectoredExceptionHandler(TRUE, ExceptionHandler);
+	Log(XORSTR(L"[v] Avn initial phase"));
+	hModules::_hCurrent = hModule;
+	IsAvnStaticLoaded = (Context != NULL);
+	AvnInitializeApi();
+	if (IsAvnStaticLoaded) NtQueueApcThread(
+		NtCurrentThread(),
+		(PIO_APC_ROUTINE)ApcInitialization,
+		(PVOID)hModule,
+		NULL,
+		0
+	);
+}
+
+VOID AvnDeinitialize() {
+	AvnStopDefence();
+	Log(XORSTR(L"[v] Avn shutted down. Good bye!"));
+}
+
+constexpr SIZE_T Key = 0x1EE7C0DE;
+
+typedef VOID(*_AvnInitialize)(HMODULE hModule, DWORD dwReason, LPCONTEXT Context);
+typedef VOID(*_AvnDeinitialize)();
+
+static _AvnInitialize AvnLoadStub = NULL;
+static _AvnDeinitialize AvnUnloadStub = NULL;
+
+class Initializator final {
+public:
+	explicit Initializator() {
+		AvnLoadStub = AvnInitialize;
+		AvnUnloadStub = AvnDeinitialize;
+	}
+} AvnLoader;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 	switch (dwReason) {
 	case DLL_PROCESS_ATTACH: {
-		//AddVectoredExceptionHandler(TRUE, ExceptionHandler);
-		Log(L"[v] Avn initial phase");
-		hModules::_hCurrent = hModule;
-		IsAvnStaticLoaded = (Context != NULL);
-		AvnInitializeApi();
-		if (IsAvnStaticLoaded) NtQueueApcThread(
-			NtCurrentThread(),
-			(PIO_APC_ROUTINE)ApcInitialization,
-			(PVOID)hModule,
-			NULL,
-			0
-		);
+		AvnLoadStub(hModule, dwReason, Context);
 		break;
 	}
 
 	case DLL_PROCESS_DETACH: {
-		AvnStopDefence();
-		Log(L"[v] Avn shutted down. Good bye!");
+		AvnUnloadStub();
 		break;
 	}
 	}

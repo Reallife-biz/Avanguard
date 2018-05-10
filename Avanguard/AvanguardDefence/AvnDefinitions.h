@@ -1,7 +1,8 @@
 #pragma once
 
 #define DEBUG_OUTPUT
-//#define LICENSE_CHECK
+
+#define SELF_REMAPPING
 
 #define STRICT_DACLs
 //#define MITIGATIONS /* Сажает FPS с JIT'ом */
