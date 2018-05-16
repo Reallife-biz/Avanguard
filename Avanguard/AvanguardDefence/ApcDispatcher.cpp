@@ -6,8 +6,8 @@ typedef NTSTATUS(NTAPI *_NtContinue)(
 	IN BOOLEAN	RaiseAlert
 );
 
-const _NtContinue NtContinue = (_NtContinue)GetProcAddress(hModules::hNtdll(), "NtContinue");
-const _NtTestAlert NtTestAlert = (_NtTestAlert)GetProcAddress(hModules::hNtdll(), "NtTestAlert");
+const _NtContinue NtContinue = (_NtContinue)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtContinue"));
+const _NtTestAlert NtTestAlert = (_NtTestAlert)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtTestAlert"));
 
 static PVOID pKiUserApcDispatcher;
 static _ApcCallback ApcCallback = NULL;
@@ -90,7 +90,7 @@ BOOL ApcDispatcher::EnableApcFilter() {
 	if (Initialized) return TRUE;
 	
 	MH_Initialize();
-	pKiUserApcDispatcher = GetProcAddress(hModules::hNtdll(), "KiUserApcDispatcher");
+	pKiUserApcDispatcher = hModules::QueryAddress(hModules::hNtdll(), XORSTR("KiUserApcDispatcher"));
 #ifdef _AMD64_
 	MH_STATUS MhStatus = MH_CreateHook(pKiUserApcDispatcher, &KiUserApcHandler, (LPVOID*)&OrgnlKiUserApcDispatcher);
 #else

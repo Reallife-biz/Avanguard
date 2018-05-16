@@ -10,8 +10,8 @@ BOOL Mitigations::Initialize() {
 #if (_WIN32_WINNT > _WIN32_WINNT_WINBLUE)
 	if (!IsWindows8Point1OrGreater()) return FALSE;
 	if (Initialized) return TRUE;
-	__SetThreadInformation = (_SetThreadInformation)GetProcAddress(hModules::hKernel32(), "SetThreadInformation");
-	__SetProcessMitigationPolicy = (_SetProcessMitigationPolicy)GetProcAddress(hModules::hKernel32(), "SetProcessMitigationPolicy");
+	__SetThreadInformation = (_SetThreadInformation)hModules::QueryAddress(hModules::hKernel32(), XORSTR("SetThreadInformation"));
+	__SetProcessMitigationPolicy = (_SetProcessMitigationPolicy)hModules::QueryAddress(hModules::hKernel32(), XORSTR("SetProcessMitigationPolicy"));
 	return Initialized = __SetThreadInformation && __SetProcessMitigationPolicy;
 #else
 	return FALSE;

@@ -4,7 +4,7 @@
 static _AvnThreatNotifier _ThreatCallback = NULL;
 
 typedef NTSTATUS (NTAPI *_NtContinue)(PCONTEXT Context, BOOL TestAlert);
-static const _NtContinue NtContinue = (_NtContinue)GetProcAddress(hModules::hNtdll(), "NtContinue");
+static const _NtContinue NtContinue = (_NtContinue)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtContinue"));
 
 [[noreturn]]
 VOID Meltdown() {

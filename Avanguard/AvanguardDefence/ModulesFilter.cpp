@@ -24,12 +24,12 @@ BOOL ModulesFilter::Initialize() {
 	if (Initialized) return TRUE;
 
 	LdrRegisterDllNotification =
-		(_LdrRegisterDllNotification)GetProcAddress(hModules::hNtdll(), "LdrRegisterDllNotification");
+		(_LdrRegisterDllNotification)hModules::QueryAddress(hModules::hNtdll(), XORSTR("LdrRegisterDllNotification"));
 	LdrUnregisterDllNotification =
-		(_LdrUnregisterDllNotification)GetProcAddress(hModules::hNtdll(), "LdrUnregisterDllNotification");
+		(_LdrUnregisterDllNotification)hModules::QueryAddress(hModules::hNtdll(), XORSTR("LdrUnregisterDllNotification"));
 	
-	LdrLoadDll = (_LdrLoadDll)GetProcAddress(hModules::hNtdll(), "LdrLoadDll");
-	LdrUnloadDll = (_LdrUnloadDll)GetProcAddress(hModules::hNtdll(), "LdrUnloadDll");
+	LdrLoadDll = (_LdrLoadDll)hModules::QueryAddress(hModules::hNtdll(), XORSTR("LdrLoadDll"));
+	LdrUnloadDll = (_LdrUnloadDll)hModules::QueryAddress(hModules::hNtdll(), XORSTR("LdrUnloadDll"));
 
 	HookInfo[0] = INTERCEPTION_ENTRY(LdrLoadDll, LdrLoadDll);
 	HookInfo[1] = INTERCEPTION_ENTRY(LdrUnloadDll, LdrUnloadDll);

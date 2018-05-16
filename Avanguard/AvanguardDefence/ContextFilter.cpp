@@ -14,8 +14,8 @@ _PostNtSetContextThread ContextFilter::PostSetContext = NULL;
 
 BOOL ContextFilter::Initialize() {
 	if (Initialized) return TRUE;
-	NtContinue = (_NtContinue)GetProcAddress(hModules::hNtdll(), "NtContinue");
-	NtSetContextThread = (_NtSetContextThread)GetProcAddress(hModules::hNtdll(), "NtSetContextThread");
+	NtContinue = (_NtContinue)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtContinue"));
+	NtSetContextThread = (_NtSetContextThread)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtSetContextThread"));
 
 	HookInfo[0] = INTERCEPTION_ENTRY(NtContinue, NtContinue);
 	HookInfo[1] = INTERCEPTION_ENTRY(NtSetContextThread, NtSetContextThread);

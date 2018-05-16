@@ -12,7 +12,7 @@ INTERCEPTION(VOID, WINAPI, LoadAppInitDlls) {
 BOOL AppInitDlls::Initialize() {
 	if (Initialized) return TRUE;
 	HookInfo = INTERCEPTION_ENTRY(
-		GetProcAddress(hModules::hKernel32(), "LoadAppInitDlls"),
+		hModules::QueryAddress(hModules::hKernel32(), XORSTR("LoadAppInitDlls")),
 		LoadAppInitDlls
 	);
 	return Initialized = HookInfo.TargetProc != NULL;

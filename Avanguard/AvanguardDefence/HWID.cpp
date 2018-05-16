@@ -305,7 +305,7 @@ typedef UINT (WINAPI *_GetSystemFirmwareTable)(
 );
 
 _GetSystemFirmwareTable __GetSystemFirmwareTable = 
-	(_GetSystemFirmwareTable)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "GetSystemFirmwareTable");
+	(_GetSystemFirmwareTable)hModules::QueryAddress(hModules::hKernel32(), XORSTR("GetSystemFirmwareTable"));
 
 BOOL GetFirmwareInfo(OUT PFIRMWARE_INFO FirmwareInfo) {
 	if (FirmwareInfo == NULL) return FALSE;

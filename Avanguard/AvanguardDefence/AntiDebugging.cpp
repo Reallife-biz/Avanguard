@@ -68,7 +68,7 @@ VOID FlushLdrData() {
 }
 
 VOID DestroyDbgUiRemoteBreakin() {
-	PVOID DbgUiRemoteBreakin = GetProcAddress(GetModuleHandle(L"ntdll.dll"), "DbgUiRemoteBreakin");
+	PVOID DbgUiRemoteBreakin = hModules::QueryAddress(hModules::hNtdll(), XORSTR("DbgUiRemoteBreakin"));
 	if (DbgUiRemoteBreakin) {
 		DWORD OldProtect;
 		VirtualProtect(DbgUiRemoteBreakin, sizeof(DWORD), PAGE_EXECUTE_READWRITE, &OldProtect);

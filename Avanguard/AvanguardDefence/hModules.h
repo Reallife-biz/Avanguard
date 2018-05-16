@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 
+typedef PVOID (WINAPI *_GetProcAddress)(HMODULE hModule, LPCSTR ProcName);
+
 class hModules final {
 private:
 	static BOOL Initialized;
@@ -9,6 +11,7 @@ private:
 	static HMODULE _hKernelBase;
 	static HMODULE _hKernel32;
 	static HMODULE _hProcess;
+	static _GetProcAddress _XoredQueryAddress;
 public:
 	static HMODULE _hCurrent; // Current module
 	static inline HMODULE hNtdll();
@@ -16,6 +19,7 @@ public:
 	static inline HMODULE hKernel32();
 	static inline HMODULE hProcess();
 	static inline HMODULE hCurrent();
+	static inline PVOID WINAPI QueryAddress(HMODULE hModule, LPCSTR ProcName);
 };
 
 
@@ -40,6 +44,14 @@ inline HMODULE hModules::hProcess() {
 
 inline HMODULE hModules::hCurrent() {
 	return _hCurrent;
+}
+
+inline PVOID WINAPI hModules::QueryAddress(HMODULE hModule, LPCSTR ProcName) {
+	return GetProcAddress(hModule, ProcName);
+	const SIZE_T Key = (SIZE_T)0xF3C2A713B4340C2A;
+	if (!_XoredQueryAddress)
+		_XoredQueryAddress = (_GetProcAddress)((SIZE_T)GetProcAddress(hKernel32(), "GetProcAddress") ^ Key);
+	return ((_GetProcAddress)((SIZE_T)_XoredQueryAddress ^ Key))(hModule, ProcName);
 }
 
 #undef GET_HMODULE

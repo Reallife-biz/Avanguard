@@ -29,6 +29,7 @@
 #include "HoShiMin's API\\ColoredConsole.h"
 #include "HoShiMin's API\\DisasmHelper.h"
 #include "HoShiMin's API\\HookHelper.h"
+#include "HoShiMin's API\\JitHelper.h"
 
 #include <time.h>
 #include <intrin.h>
@@ -36,13 +37,6 @@
 #ifdef SELF_REMAPPING
 // Be ready for self-remapping code:
 #pragma comment(linker, "/ALIGN:65536")
-#endif
-
-#ifdef _DEBUG
-#define XORSTR(Text) (Text)
-#else
-#include "xorstr\\xorstr.hpp"
-#define XORSTR(Text) (xorstr(Text).crypt_get())
 #endif
 
 #include "AvnApi.h"
@@ -124,23 +118,23 @@ typedef NTSTATUS (NTAPI *_RtlDeleteTimer)(
 	_In_ HANDLE CompletionEvent
 ); 
 
-const _RtlCreateTimerQueue RtlCreateTimerQueue = (_RtlCreateTimerQueue)GetProcAddress(hModules::hNtdll(), "RtlCreateTimerQueue");
-const _RtlDeleteTimerQueue RtlDeleteTimerQueue = (_RtlDeleteTimerQueue)GetProcAddress(hModules::hNtdll(), "RtlDeleteTimerQueue");
-const _RtlCreateTimer RtlCreateTimer = (_RtlCreateTimer)GetProcAddress(hModules::hNtdll(), "RtlCreateTimer");
-const _RtlDeleteTimer RtlDeleteTimer = (_RtlDeleteTimer)GetProcAddress(hModules::hNtdll(), "RtlDeleteTimer");
+const _RtlCreateTimerQueue RtlCreateTimerQueue = (_RtlCreateTimerQueue)hModules::QueryAddress(hModules::hNtdll(), "RtlCreateTimerQueue");
+const _RtlDeleteTimerQueue RtlDeleteTimerQueue = (_RtlDeleteTimerQueue)hModules::QueryAddress(hModules::hNtdll(), "RtlDeleteTimerQueue");
+const _RtlCreateTimer RtlCreateTimer = (_RtlCreateTimer)hModules::QueryAddress(hModules::hNtdll(), "RtlCreateTimer");
+const _RtlDeleteTimer RtlDeleteTimer = (_RtlDeleteTimer)hModules::QueryAddress(hModules::hNtdll(), "RtlDeleteTimer");
 #endif
 
 #ifdef THREADS_FILTER
 static PVOID RestrictedAddresses[] = {
-	GetProcAddress(hModules::hNtdll(), "LdrLoadDll"),
-	GetProcAddress(hModules::hKernel32(), "LoadLibraryA"),
-	GetProcAddress(hModules::hKernel32(), "LoadLibraryW"),
-	GetProcAddress(hModules::hKernel32(), "LoadLibraryExA"),
-	GetProcAddress(hModules::hKernel32(), "LoadLibraryExW"),
-	GetProcAddress(hModules::hKernelBase(), "LoadLibraryA"),
-	GetProcAddress(hModules::hKernelBase(), "LoadLibraryW"),
-	GetProcAddress(hModules::hKernelBase(), "LoadLibraryExA"),
-	GetProcAddress(hModules::hKernelBase(), "LoadLibraryExW")
+	hModules::QueryAddress(hModules::hNtdll(), XORSTR("LdrLoadDll")),
+	hModules::QueryAddress(hModules::hKernel32(), XORSTR("LoadLibraryA")),
+	hModules::QueryAddress(hModules::hKernel32(), XORSTR("LoadLibraryW")),
+	hModules::QueryAddress(hModules::hKernel32(), XORSTR("LoadLibraryExA")),
+	hModules::QueryAddress(hModules::hKernel32(), XORSTR("LoadLibraryExW")),
+	hModules::QueryAddress(hModules::hKernelBase(), XORSTR("LoadLibraryA")),
+	hModules::QueryAddress(hModules::hKernelBase(), XORSTR("LoadLibraryW")),
+	hModules::QueryAddress(hModules::hKernelBase(), XORSTR("LoadLibraryExA")),
+	hModules::QueryAddress(hModules::hKernelBase(), XORSTR("LoadLibraryExW"))
 };
 
 BOOL IsThreadAllowed(PVOID EntryPoint) {
@@ -442,7 +436,29 @@ BOOL OperateTimeredCheckings(BOOL DesiredState) {
 }
 #endif
 
+static void dumpCode(const uint8_t* buf, size_t size) {
+	enum { kCharsPerLine = 39 };
+	char hex[kCharsPerLine * 2 + 1];
 
+	size_t i = 0;
+	while (i < size) {
+		size_t j = 0;
+		size_t end = size - i < kCharsPerLine ? size - i : size_t(kCharsPerLine);
+
+		end += i;
+		while (i < end) {
+			uint8_t b0 = buf[i] >> 4;
+			uint8_t b1 = buf[i] & 15;
+
+			hex[j++] = b0 < 10 ? '0' + b0 : 'A' + b0 - 10;
+			hex[j++] = b1 < 10 ? '0' + b1 : 'A' + b1 - 10;
+			i++;
+		}
+
+		hex[j] = '\0';
+		puts(hex);
+	}
+}
 
 BOOL AvnStartDefence() {
 	if (IsAvnStarted) return TRUE;
@@ -593,7 +609,7 @@ typedef NTSTATUS (NTAPI *_NtQueueApcThread) (
 	IN PIO_STATUS_BLOCK     ApcStatusBlock OPTIONAL,
 	IN ULONG                ApcReserved OPTIONAL
 );
-_NtQueueApcThread NtQueueApcThread = (_NtQueueApcThread)GetProcAddress(hModules::hNtdll(), "NtQueueApcThread");
+_NtQueueApcThread NtQueueApcThread = (_NtQueueApcThread)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtQueueApcThread"));
 
 VOID NTAPI ApcInitialization(
 	IN PVOID ApcContext,
@@ -617,11 +633,11 @@ LONG CALLBACK ExceptionHandler(IN PEXCEPTION_POINTERS ExceptionInfo) {
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-VOID AvnInitialize(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
+VOID WINAPI AvnInit(HMODULE hModule, DWORD dwReason, LPCONTEXT lpContext) {
 	AddVectoredExceptionHandler(TRUE, ExceptionHandler);
 	Log(XORSTR(L"[v] Avn initial phase"));
 	hModules::_hCurrent = hModule;
-	IsAvnStaticLoaded = (Context != NULL);
+	IsAvnStaticLoaded = (lpContext != NULL);
 	AvnInitializeApi();
 	if (IsAvnStaticLoaded) NtQueueApcThread(
 		NtCurrentThread(),
@@ -632,36 +648,34 @@ VOID AvnInitialize(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
 	);
 }
 
-VOID AvnDeinitialize() {
+VOID WINAPI AvnDeinit() {
 	AvnStopDefence();
 	Log(XORSTR(L"[v] Avn shutted down. Good bye!"));
 }
 
-constexpr SIZE_T Key = 0x1EE7C0DE;
 
-typedef VOID(*_AvnInitialize)(HMODULE hModule, DWORD dwReason, LPCONTEXT Context);
-typedef VOID(*_AvnDeinitialize)();
-
-static _AvnInitialize AvnLoadStub = NULL;
-static _AvnDeinitialize AvnUnloadStub = NULL;
-
-class Initializator final {
-public:
-	explicit Initializator() {
-		AvnLoadStub = AvnInitialize;
-		AvnUnloadStub = AvnDeinitialize;
-	}
-} AvnLoader;
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT Context) {
+__declspec(code_seg(".stub"))
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT lpContext) {
 	switch (dwReason) {
 	case DLL_PROCESS_ATTACH: {
-		AvnLoadStub(hModule, dwReason, Context);
+		typedef VOID(WINAPI *_AvnInit)(HMODULE hModule, DWORD dwReason, LPCONTEXT Context);
+		
+#ifdef _AMD64_
+		AsmJIT JIT(asmjit::ArchInfo::kIdX64);
+		JIT.Add("mov rax, " + ValToAnsiStr((SIZE_T)AvnInit));
+		JIT.Add("jmp rax");
+#else
+		AsmJIT JIT(asmjit::ArchInfo::kIdX86);
+		JIT.Add("mov eax, " + ValToAnsiStr((SIZE_T)AvnInit));
+		JIT.Add("jmp eax");
+#endif
+		JIT.Build();
+		((_AvnInit)JIT.MakeCallable())(hModule, dwReason, lpContext);
 		break;
 	}
 
 	case DLL_PROCESS_DETACH: {
-		AvnUnloadStub();
+		AvnDeinit();
 		break;
 	}
 	}

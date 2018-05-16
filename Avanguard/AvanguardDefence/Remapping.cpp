@@ -64,6 +64,9 @@ BOOL RemapModule(HMODULE hModule, BOOL UnmapShadowMemory) {
 		return FALSE;
 	}
 
+	// Копируем PE-заголовок:
+	CopyMemory(Shadow, hModule, USN_PAGE_SIZE);
+
 	std::vector<SEC_INFO> SectionsInfo;
 	const auto& Sections = pe.GetSectionsInfo();
 	for (const auto& Section : Sections) {
@@ -81,8 +84,8 @@ BOOL RemapModule(HMODULE hModule, BOOL UnmapShadowMemory) {
 	RemapParameters.hMapping = hMapping;
 	RemapParameters.hModule = hModule;
 	RemapParameters.Shadow = Shadow;
-	RemapParameters.UnmapViewOfFile = (_UnmapViewOfFile)GetProcAddress(hModules::hKernel32(), "UnmapViewOfFile");
-	RemapParameters.MapViewOfFileEx = (_MapViewOfFileEx)GetProcAddress(hModules::hKernel32(), "MapViewOfFileEx");
+	RemapParameters.UnmapViewOfFile = (_UnmapViewOfFile)hModules::QueryAddress(hModules::hKernel32(), XORSTR("UnmapViewOfFile"));
+	RemapParameters.MapViewOfFileEx = (_MapViewOfFileEx)hModules::QueryAddress(hModules::hKernel32(), XORSTR("MapViewOfFileEx"));
 	RemapParameters.SecInfo = &(SectionsInfo[0]);
 	RemapParameters.SectionsCount = SectionsInfo.size();
 

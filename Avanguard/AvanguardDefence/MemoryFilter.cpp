@@ -87,11 +87,11 @@ FILTRATION(
 
 BOOL IsMemHooksInitialized = FALSE;
 
-const PVOID pNtAllocateVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtAllocateVirtualMemory");
-const PVOID pNtProtectVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtProtectVirtualMemory");
-const PVOID pNtFreeVirtualMemory = GetProcAddress(hModules::hNtdll(), "NtFreeVirtualMemory");
-//const PVOID pNtMapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtMapViewOfSection");
-//const PVOID pNtUnmapViewOfSection = GetProcAddress(hModules::hNtdll(), "NtUnmapViewOfSection");
+const PVOID pNtAllocateVirtualMemory = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtAllocateVirtualMemory"));
+const PVOID pNtProtectVirtualMemory = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtProtectVirtualMemory"));
+const PVOID pNtFreeVirtualMemory = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtFreeVirtualMemory"));
+//const PVOID pNtMapViewOfSection = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtMapViewOfSection"));
+//const PVOID pNtUnmapViewOfSection = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtUnmapViewOfSection"));
 
 HOOK_INFO HooksInfo[] = {
 	INTERCEPTION_ENTRY(pNtAllocateVirtualMemory, NtAllocateVirtualMemory),

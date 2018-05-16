@@ -23,11 +23,11 @@ namespace {
 
 	typedef NTSTATUS(NTAPI *_NtTerminateThread)(HANDLE hThread, NTSTATUS ExitStatus);
 	const _NtTerminateThread NtTerminateThread =
-		(_NtTerminateThread)GetProcAddress(hModules::hNtdll(), "NtTerminateThread");
+		(_NtTerminateThread)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtTerminateThread"));
 
 	typedef DWORD(WINAPI *_GetThreadId)(HANDLE hProcess);
 	const _GetThreadId __GetThreadId = 
-		(_GetThreadId)GetProcAddress(hModules::hKernel32(), "GetThreadId");
+		(_GetThreadId)hModules::QueryAddress(hModules::hKernel32(), XORSTR("GetThreadId"));
 }
 
 
@@ -177,10 +177,10 @@ INTERCEPTION(NTSTATUS, NTAPI, NtTerminateThread,
 }
 
 
-const PVOID pNtCreateThread = GetProcAddress(hModules::hNtdll(), "NtCreateThread");
-const PVOID pNtCreateThreadEx = GetProcAddress(hModules::hNtdll(), "NtCreateThreadEx");
-const PVOID pNtTerminateThread = GetProcAddress(hModules::hNtdll(), "NtTerminateThread");
-const PVOID pLdrInitializeThunk = GetProcAddress(hModules::hNtdll(), "LdrInitializeThunk");
+const PVOID pNtCreateThread = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtCreateThread"));
+const PVOID pNtCreateThreadEx = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtCreateThreadEx"));
+const PVOID pNtTerminateThread = hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtTerminateThread"));
+const PVOID pLdrInitializeThunk = hModules::QueryAddress(hModules::hNtdll(), XORSTR("LdrInitializeThunk"));
 
 HOOK_INFO ThreadsHooksInfo[] = {
 	INTERCEPTION_ENTRY(pLdrInitializeThunk, LdrInitializeThunk),
