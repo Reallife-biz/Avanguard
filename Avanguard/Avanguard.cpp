@@ -25,13 +25,9 @@
 #include "Remapping.h"
 
 #include "HoShiMin's API\\StringsAPI.h"
-#include "HoShiMin's API\\CodepageAPI.h"
-#include "HoShiMin's API\\ColoredConsole.h"
 #include "HoShiMin's API\\DisasmHelper.h"
-#include "HoShiMin's API\\HookHelper.h"
 #include "HoShiMin's API\\JitHelper.h"
 
-#include <time.h>
 #include <intrin.h>
 
 #ifdef SELF_REMAPPING
@@ -87,7 +83,7 @@ VOID DisassembleAndLog(PVOID Address, BYTE InstructionsCount) {
 
 #ifdef SELF_REMAPPING
 VOID RemapAvnExecutableSections() {
-	BOOL Status = RemapModule(hModules::hCurrent(), TRUE);
+    const BOOL Status = RemapModule(hModules::hCurrent(), TRUE);
 	Log(Status ? XORSTR(L"[v] Module successfully remapped") : XORSTR(L"[x] Unable to remap module!"));
 }
 #endif
@@ -378,7 +374,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
 #ifdef STRICT_DACLs
 BOOL SetupDACLs() {
 	DACL Dacl(GetCurrentProcess());
-	ULONG AccessRights =
+    const ULONG AccessRights =
 		WRITE_DAC | WRITE_OWNER |
 		PROCESS_CREATE_PROCESS | PROCESS_CREATE_THREAD |
 		PROCESS_DUP_HANDLE | PROCESS_QUERY_INFORMATION |
@@ -436,30 +432,6 @@ BOOL OperateTimeredCheckings(BOOL DesiredState) {
 }
 #endif
 
-static void dumpCode(const uint8_t* buf, size_t size) {
-	enum { kCharsPerLine = 39 };
-	char hex[kCharsPerLine * 2 + 1];
-
-	size_t i = 0;
-	while (i < size) {
-		size_t j = 0;
-		size_t end = size - i < kCharsPerLine ? size - i : size_t(kCharsPerLine);
-
-		end += i;
-		while (i < end) {
-			uint8_t b0 = buf[i] >> 4;
-			uint8_t b1 = buf[i] & 15;
-
-			hex[j++] = b0 < 10 ? '0' + b0 : 'A' + b0 - 10;
-			hex[j++] = b1 < 10 ? '0' + b1 : 'A' + b1 - 10;
-			i++;
-		}
-
-		hex[j] = '\0';
-		puts(hex);
-	}
-}
-
 BOOL AvnStartDefence() {
 	if (IsAvnStarted) return TRUE;
 
@@ -512,7 +484,7 @@ BOOL AvnStartDefence() {
 #ifdef APC_FILTER
 	ApcDispatcher::EnableApcFilter();
 	ApcDispatcher::SetupApcCallback([](PVOID ApcProc, PVOID RetAddr) -> BOOL {
-		BOOL IsApcAllowed = GetModuleBase(ApcProc) != NULL;
+	    const BOOL IsApcAllowed = GetModuleBase(ApcProc) != NULL;
 		Log(IsApcAllowed ? XORSTR(L"[i] Allowed APC queried!") : XORSTR(L"[x] APC disallowed!"));
 		if (!IsApcAllowed) EliminateThreat(avnUnknownApcDestination, NULL);
 		return IsApcAllowed;
@@ -609,7 +581,7 @@ typedef NTSTATUS (NTAPI *_NtQueueApcThread) (
 	IN PIO_STATUS_BLOCK     ApcStatusBlock OPTIONAL,
 	IN ULONG                ApcReserved OPTIONAL
 );
-_NtQueueApcThread NtQueueApcThread = (_NtQueueApcThread)hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtQueueApcThread"));
+auto NtQueueApcThread = static_cast<_NtQueueApcThread>(hModules::QueryAddress(hModules::hNtdll(), XORSTR("NtQueueApcThread")));
 
 VOID NTAPI ApcInitialization(
 	IN PVOID ApcContext,
@@ -621,7 +593,7 @@ VOID NTAPI ApcInitialization(
 }
 
 LONG CALLBACK ExceptionHandler(IN PEXCEPTION_POINTERS ExceptionInfo) {
-	PEXCEPTION_RECORD ExceptionRecord = ExceptionInfo->ExceptionRecord;
+    const auto ExceptionRecord = ExceptionInfo->ExceptionRecord;
 	if (GetModuleBase(ExceptionRecord->ExceptionAddress) != hModules::hCurrent()) return EXCEPTION_CONTINUE_SEARCH;
 	Log(
 		std::wstring(XORSTR(L"[x] Exception catched!\r\n")) +
@@ -641,8 +613,8 @@ VOID WINAPI AvnInit(HMODULE hModule, DWORD dwReason, LPCONTEXT lpContext) {
 	AvnInitializeApi();
 	if (IsAvnStaticLoaded) NtQueueApcThread(
 		NtCurrentThread(),
-		(PIO_APC_ROUTINE)ApcInitialization,
-		(PVOID)hModule,
+		static_cast<PIO_APC_ROUTINE>(ApcInitialization),
+		static_cast<PVOID>(hModule),
 		NULL,
 		0
 	);
@@ -662,15 +634,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPCONTEXT lpContext) {
 		
 #ifdef _AMD64_
 		AsmJIT JIT(asmjit::ArchInfo::kIdX64);
-		JIT.Add("mov rax, " + ValToAnsiStr((SIZE_T)AvnInit));
-		JIT.Add("jmp rax");
+		JIT.Add(XORSTR("mov rax, ") + ValToAnsiStr(reinterpret_cast<SIZE_T>(AvnInit)));
+		JIT.Add(XORSTR("jmp rax"));
 #else
 		AsmJIT JIT(asmjit::ArchInfo::kIdX86);
-		JIT.Add("mov eax, " + ValToAnsiStr((SIZE_T)AvnInit));
-		JIT.Add("jmp eax");
+		JIT.Add(XORSTR("mov eax, ") + ValToAnsiStr((SIZE_T)AvnInit));
+		JIT.Add(XORSTR("jmp eax"));
 #endif
 		JIT.Build();
-		((_AvnInit)JIT.MakeCallable())(hModule, dwReason, lpContext);
+		static_cast<_AvnInit>(JIT.MakeCallable())(hModule, dwReason, lpContext);
 		break;
 	}
 

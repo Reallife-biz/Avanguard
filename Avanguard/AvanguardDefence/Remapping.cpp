@@ -12,6 +12,7 @@ typedef struct _SEC_INFO {
 	PVOID ShadowAddress;
 	SIZE_T Size;
 	BOOL Executable;
+	BOOL Writeable;
 } SEC_INFO, *PSEC_INFO;
 
 typedef BOOL(WINAPI *_UnmapViewOfFile)(PVOID Address);
@@ -34,9 +35,11 @@ static VOID RemapSections(PREMAP_PARAMETERS RemapParameters) {
 	// Map of sections:
 	for (SIZE_T i = 0; i < RemapParameters->SectionsCount; i++) {
 		PSEC_INFO Section = RemapParameters->SecInfo + i;
+		DWORD Access = Section->Executable ? FILE_MAP_READ | FILE_MAP_EXECUTE : FILE_MAP_READ;
+		if (Section->Writeable) Access |= FILE_MAP_WRITE;
 		RemapParameters->MapViewOfFileEx(
 			RemapParameters->hMapping,
-			Section->Executable ? FILE_MAP_READ | FILE_MAP_EXECUTE | SECTION_MAP_EXECUTE_EXPLICIT : FILE_MAP_ALL_ACCESS,
+			Access,
 			0, 
 			(DWORD)((SIZE_T)Section->OriginalAddress - (SIZE_T)RemapParameters->hModule),
 			Section->Size,
@@ -45,20 +48,20 @@ static VOID RemapSections(PREMAP_PARAMETERS RemapParameters) {
 	}
 
 	// Map of PE-header:
-	RemapParameters->MapViewOfFileEx(RemapParameters->hMapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, USN_PAGE_SIZE, RemapParameters->hModule);
+	RemapParameters->MapViewOfFileEx(RemapParameters->hMapping, FILE_MAP_READ, 0, 0, USN_PAGE_SIZE, RemapParameters->hModule);
 }
 
 BOOL RemapModule(HMODULE hModule, BOOL UnmapShadowMemory) {
 
 	PEAnalyzer pe(hModule, FALSE);
-	DWORD ImageSize = pe.GetOptionalHeader()->SizeOfImage;
+    const DWORD ImageSize = pe.GetOptionalHeader()->SizeOfImage;
 
 	// Создаём объект отображения:
-	HANDLE hMapping = CreateFileMapping(NULL, NULL, PAGE_EXECUTE_READWRITE, 0, ImageSize, NULL);
+    const HANDLE hMapping = const_cast<const HANDLE>(CreateFileMapping(NULL, NULL, PAGE_EXECUTE_READWRITE, 0, ImageSize, NULL));
 	if (hMapping == NULL) return FALSE;
 
 	// Мапим отображение для теневой памяти:
-	PVOID Shadow = MapViewOfFile(hMapping, FILE_MAP_ALL_ACCESS | SECTION_MAP_EXECUTE_EXPLICIT, 0, 0, ImageSize);
+	PVOID Shadow = MapViewOfFile(hMapping, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, ImageSize);
 	if (Shadow == NULL) {
 		CloseHandle(hMapping);
 		return FALSE;
@@ -75,7 +78,8 @@ BOOL RemapModule(HMODULE hModule, BOOL UnmapShadowMemory) {
 		SecInfo.OriginalAddress = (PVOID)((PBYTE)hModule + Section.OffsetInMemory);
 		SecInfo.ShadowAddress = (PVOID)((PBYTE)Shadow + Section.OffsetInMemory);
 		SecInfo.Size = Section.SizeInMemory;
-		SecInfo.Executable = (SecType & IMAGE_SCN_CNT_CODE) || (SecType & IMAGE_SCN_MEM_EXECUTE);
+		SecInfo.Executable = ((SecType & IMAGE_SCN_CNT_CODE) == IMAGE_SCN_CNT_CODE) || ((SecType & IMAGE_SCN_MEM_EXECUTE) == IMAGE_SCN_MEM_EXECUTE);
+		SecInfo.Writeable = (SecType & IMAGE_SCN_MEM_WRITE) == IMAGE_SCN_MEM_WRITE;
 		CopyMemory(SecInfo.ShadowAddress, SecInfo.OriginalAddress, SecInfo.Size);
 		SectionsInfo.emplace_back(SecInfo);
 	}
@@ -86,7 +90,7 @@ BOOL RemapModule(HMODULE hModule, BOOL UnmapShadowMemory) {
 	RemapParameters.Shadow = Shadow;
 	RemapParameters.UnmapViewOfFile = (_UnmapViewOfFile)hModules::QueryAddress(hModules::hKernel32(), XORSTR("UnmapViewOfFile"));
 	RemapParameters.MapViewOfFileEx = (_MapViewOfFileEx)hModules::QueryAddress(hModules::hKernel32(), XORSTR("MapViewOfFileEx"));
-	RemapParameters.SecInfo = &(SectionsInfo[0]);
+	RemapParameters.SecInfo = &*SectionsInfo.begin();
 	RemapParameters.SectionsCount = SectionsInfo.size();
 
 	typedef PVOID(WINAPI *_RemapSections)(PREMAP_PARAMETERS RemapParameters);
@@ -97,5 +101,6 @@ BOOL RemapModule(HMODULE hModule, BOOL UnmapShadowMemory) {
 	if (UnmapShadowMemory) UnmapViewOfFile(Shadow);
 	
 	CloseHandle(hMapping);
+
 	return TRUE;
 }
