@@ -40,7 +40,7 @@ void ModulesStorage::FillModulesInfo() {
 	LoadedModules.clear();
 
 	Lock();
-	EnumerateModules([this](NTDEFINES::PLDR_MODULE Module) -> void {
+	EnumerateModules([this](NTDEFINES::PLDR_MODULE Module) -> bool {
 		std::wstring ModuleName = GetNormalizedName(std::wstring(Module->BaseDllName.Buffer));
 
 		PEAnalyzer pe((HMODULE)Module->BaseAddress, FALSE);
@@ -49,6 +49,8 @@ void ModulesStorage::FillModulesInfo() {
 		ModuleInfo.Name = ModuleName;
 		AnalyzeExecutableSections(pe, ModuleInfo);
 		LoadedModules.emplace((HMODULE)Module->BaseAddress, ModuleInfo);
+        
+	    return true;
 	});
 	Unlock();
 }

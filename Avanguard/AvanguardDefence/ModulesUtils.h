@@ -7,8 +7,8 @@
 #include "PebTeb.h"
 
 HMODULE GetModuleBase(PVOID Pointer);
-std::wstring GetModuleName(HMODULE hModule);
-std::wstring GetModuleName(PVOID Address);
+std::wstring GetModuleName(PVOID AddressOrBase);
+std::wstring GetModulePath(PVOID AddressOrBase);
 
-typedef std::function<void(NTDEFINES::PLDR_MODULE Module)> EnumerateModulesCallback;
+typedef std::function<bool(NTDEFINES::PLDR_MODULE Module)> EnumerateModulesCallback;
 void EnumerateModules(EnumerateModulesCallback Callback);

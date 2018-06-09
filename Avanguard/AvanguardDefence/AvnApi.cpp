@@ -8,6 +8,8 @@
 #include "HWIDsUtils.h"
 #include "ThreatElimination.h"
 
+#include "SfcWrapper.h"
+
 AVN_API AvnApi;
 static CRITICAL_SECTION CriticalSection;
 
@@ -65,7 +67,7 @@ BOOL WINAPI AvnIsModuleValid(HMODULE hModule) {
 }
 
 BOOL WINAPI AvnIsFileProtected(LPCWSTR FilePath) {
-	return SfcIsFileProtected(NULL, FilePath);
+	return Sfc::IsFileProtected(FilePath);
 }
 
 BOOL WINAPI AvnIsFileSigned(LPCWSTR FilePath, BOOL CheckRevocation) {
@@ -73,7 +75,8 @@ BOOL WINAPI AvnIsFileSigned(LPCWSTR FilePath, BOOL CheckRevocation) {
 }
 
 BOOL WINAPI AvnVerifyEmbeddedSignature(LPCWSTR FilePath) {
-	return VerifyEmbeddedSignature(FilePath);
+	return IsFileSigned(FilePath, TRUE);
+    //return VerifyEmbeddedSignature(FilePath);
 }
 
 BOOL WINAPI AvnIsAddressAllowed(PVOID Address, BOOL IncludeJitMemory) {

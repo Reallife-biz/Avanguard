@@ -76,18 +76,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>.\MinHook;.\AvanguardDefence;.\AsmJit;.\AsmJit\asmjit;.\AsmJit\asmtk;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
     <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\Bin\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>.\MinHook;.\AvanguardDefence;.\AsmJit;.\AsmJit\asmjit;.\AsmJit\asmtk;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
     <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\Bin\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>.\MinHook;.\AvanguardDefence;.\AsmJit;.\AsmJit\asmjit;.\AsmJit\asmtk;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
     <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\Bin\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>.\MinHook;.\AvanguardDefence;.\AsmJit;.\AsmJit\asmjit;.\AsmJit\asmtk;.\HoShiMin's API;.\t1ha;.\;.\Zydis;.\JNI\include;.\JNI\include\win32;$(IncludePath)</IncludePath>
     <LibraryPath>.\Zydis;.\JNI\lib;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\Bin\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -108,7 +112,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt;libcmt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;advapi32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
@@ -124,7 +128,6 @@
       <PreprocessorDefinitions>_DEBUG;AVANGUARD_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ControlFlowGuard>false</ControlFlowGuard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <StringPooling>true</StringPooling>
     </ClCompile>
@@ -134,7 +137,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt;libcmt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;advapi32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
@@ -168,7 +171,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;advapi32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
@@ -202,7 +205,7 @@
       <IgnoreSpecificDefaultLibraries>msvcrt</IgnoreSpecificDefaultLibraries>
       <SectionAlignment>
       </SectionAlignment>
-      <DelayLoadDLLs>user32.dll;shell32.dll;wintrust.dll;sfc.dll;advapi32.dll;crypt32.dll;iphlpapi.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>user32.dll;shell32.dll;advapi32.dll;iphlpapi.dll</DelayLoadDLLs>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
@@ -310,6 +313,7 @@
     <ClInclude Include="AvanguardDefence\PEUtils.h" />
     <ClInclude Include="AvanguardDefence\ProcessAPI.h" />
     <ClInclude Include="AvanguardDefence\Remapping.h" />
+    <ClInclude Include="AvanguardDefence\SfcWrapper.h" />
     <ClInclude Include="AvanguardDefence\ThreadsFilter.h" />
     <ClInclude Include="AvanguardDefence\ThreatElimination.h" />
     <ClInclude Include="AvanguardDefence\ThreatTypes.h" />
@@ -386,6 +390,7 @@
     <ClCompile Include="AvanguardDefence\PEUtils.cpp" />
     <ClCompile Include="AvanguardDefence\ProcessAPI.cpp" />
     <ClCompile Include="AvanguardDefence\Remapping.cpp" />
+    <ClCompile Include="AvanguardDefence\SfcWrapper.cpp" />
     <ClCompile Include="AvanguardDefence\ThreadsFilter.cpp" />
     <ClCompile Include="AvanguardDefence\ThreatElimination.cpp" />
     <ClCompile Include="AvanguardDefence\TLS.cpp" />

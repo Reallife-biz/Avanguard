@@ -163,6 +163,9 @@
     <Filter Include="AsmJit\lib\x64">
       <UniqueIdentifier>{4a56dffc-0b39-4395-8e57-6f46ecf435b4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AvanguardDefence\Sfc">
+      <UniqueIdentifier>{0bd6839a-4fb3-454e-a0ac-35eb293370d5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -582,6 +585,9 @@
     <ClInclude Include="HoShiMin%27s API\JitHelper.h">
       <Filter>HoShiMin%27s API</Filter>
     </ClInclude>
+    <ClInclude Include="AvanguardDefence\SfcWrapper.h">
+      <Filter>AvanguardDefence\Sfc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -712,6 +718,9 @@
     </ClCompile>
     <ClCompile Include="HoShiMin%27s API\JitHelper.cpp">
       <Filter>HoShiMin%27s API</Filter>
+    </ClCompile>
+    <ClCompile Include="AvanguardDefence\SfcWrapper.cpp">
+      <Filter>AvanguardDefence\Sfc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

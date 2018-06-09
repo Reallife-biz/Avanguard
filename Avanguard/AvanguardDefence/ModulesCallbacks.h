@@ -13,9 +13,6 @@
 #include <set>
 #include <vector>
 
-#include <Sfc.h>
-#pragma comment(lib, "sfc.lib")
-
 extern ModulesStorage ValidModulesStorage;
 
 NTSTATUS CALLBACK PreLoadModuleCallback(

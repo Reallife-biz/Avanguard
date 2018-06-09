@@ -1,7 +1,35 @@
 #include "stdafx.h"
+#include <Windows.h>
+#include <WinTrust.h>
+#include <Softpub.h>
+//#include <wincrypt.h>
+//#include <mscat.h>
+
 #include "WinTrusted.h"
 
+#include "xorstr/xorstr.hpp"
+
+//#pragma comment(lib, "wintrust.lib")
+//#pragma comment(lib, "crypt32.lib")
+
+namespace {
+    using _WinVerifyTrust = LONG(WINAPI*)(HWND hwnd, GUID* pgActionID, LPVOID pWVTData);
+    _WinVerifyTrust __WinVerifyTrust = NULL;
+}
+
+BOOL InitWinTrust() {
+    if (__WinVerifyTrust != NULL) return TRUE;
+    HMODULE hWinTrust = GetModuleHandle(XORSTR(L"wintrust.dll"));
+    if (!hWinTrust) hWinTrust = LoadLibrary(XORSTR(L"wintrust.dll"));
+    if (hWinTrust) __WinVerifyTrust = reinterpret_cast<_WinVerifyTrust>(
+        GetProcAddress(hWinTrust, XORSTR("WinVerifyTrust"))    
+    );
+    return __WinVerifyTrust != NULL;
+}
+
 BOOL IsFileSigned(LPCWSTR FilePath, BOOL CheckRevocation) {
+    if (!InitWinTrust()) return FALSE;
+
 	WINTRUST_FILE_INFO FileInfo = { 0 };
 	FileInfo.cbStruct = sizeof(FileInfo);
 	FileInfo.pcwszFilePath = FilePath;
@@ -15,9 +43,10 @@ BOOL IsFileSigned(LPCWSTR FilePath, BOOL CheckRevocation) {
 
 	GUID ActionGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
-	return WinVerifyTrust(NULL, &ActionGUID, &WinTrustData) == ERROR_SUCCESS;
+	return __WinVerifyTrust(NULL, &ActionGUID, &WinTrustData) == ERROR_SUCCESS;
 }
 
+/*
 BOOL VerifyEmbeddedSignature(LPCWSTR FilePath) {
 	WINTRUST_FILE_INFO FileInfo = { 0 };
 	FileInfo.cbStruct = sizeof(WINTRUST_FILE_INFO);
@@ -92,52 +121,4 @@ BOOL VerifyEmbeddedSignature(LPCWSTR FilePath) {
 
 	return Status == ERROR_SUCCESS;
 }
-
-
-BOOL GetCertInfo(LPCWSTR FilePath) {
-	BOOL bIsSuccess;
-	DWORD dwEncoding, dwContentType, dwFormatType;
-	HCERTSTORE hStore = NULL;
-	HCRYPTMSG hMsg = NULL;
-	PVOID* pvContext = NULL;
-
-	bIsSuccess = CryptQueryObject(
-		CERT_QUERY_OBJECT_FILE,
-		(const void*)FilePath,
-		CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
-		CERT_QUERY_FORMAT_FLAG_BINARY,
-		0,
-		&dwEncoding,
-		&dwContentType,
-		&dwFormatType,
-		&hStore,
-		&hMsg,
-		(const void**)&pvContext
-	);
-
-	if (!bIsSuccess) return FALSE;
-
-	DWORD Length;
-	bIsSuccess = CryptMsgGetParam(
-		hMsg,
-		CMSG_SIGNER_INFO_PARAM,
-		0,
-		NULL,
-		&Length
-	);
-
-	PCERT_INFO pCertInfo = (PCERT_INFO)new BYTE[Length];
-	ZeroMemory(pCertInfo, Length);
-	bIsSuccess = CryptMsgGetParam(
-		hMsg,
-		CMSG_SIGNER_INFO_PARAM,
-		0,
-		pCertInfo,
-		&Length
-	);
-	WCHAR Buffer[512] = { 0 };
-	CertNameToStr(X509_ASN_ENCODING, &pCertInfo->Subject, CERT_X500_NAME_STR, Buffer, 512);
-	delete[] pCertInfo;
-
-	return TRUE;
-}
+*/

@@ -2,7 +2,7 @@
 
 #define DEBUG_OUTPUT
 
-#define SELF_REMAPPING
+//#define SELF_REMAPPING
 
 #define STRICT_DACLs
 //#define MITIGATIONS /* Сажает FPS с JIT'ом */

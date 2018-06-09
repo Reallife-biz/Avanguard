@@ -24,6 +24,8 @@
 #include "ThreatElimination.h"
 #include "Remapping.h"
 
+#include "SfcWrapper.h"
+
 #include "HoShiMin's API\\StringsAPI.h"
 #include "HoShiMin's API\\DisasmHelper.h"
 #include "HoShiMin's API\\JitHelper.h"
@@ -193,13 +195,14 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 	
 	Log(XORSTR(L"[!] Attempt to load ") + Path + XORSTR(L" through the windows hooks!"));
 
-	BOOL IsFileAllowed = SfcIsFileProtected(NULL, ModuleFileName->Buffer);
+    DWORD LastError = GetLastError();
+	BOOL IsFileAllowed = Sfc::IsFileProtected(ModuleFileName->Buffer);
 	Log(IsFileAllowed ? (XORSTR(L"[v] Module ") + Path + XORSTR(L" allowed!")) : (XORSTR(L"[!] Module ") + Path + XORSTR(L" not a system module!")));
 	if (IsFileAllowed) return TRUE;
 
 	if (!IsFileAllowed) {
 		Log(XORSTR(L"[i] Checking the sign of ") + Path);
-		IsFileAllowed = IsFileSigned(ModuleFileName->Buffer, FALSE) || VerifyEmbeddedSignature(ModuleFileName->Buffer);
+		IsFileAllowed = IsFileSigned(ModuleFileName->Buffer, FALSE);
 	}
 
 	if (!IsFileAllowed) {
@@ -464,6 +467,9 @@ BOOL AvnStartDefence() {
 	Log(XORSTR(L"[v] AppInitDlls intercepted"));
 #endif
 
+    Sfc::Initialize();
+    InitWinTrust();
+
 #ifdef MODULES_FILTER
 	ModulesFilter::SetupFilterCallbacks(PreLoadModuleCallback);
 	ModulesFilter::SetupNotificationCallbacks(DllNotificationRoutine);
@@ -606,7 +612,7 @@ LONG CALLBACK ExceptionHandler(IN PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 VOID WINAPI AvnInit(HMODULE hModule, DWORD dwReason, LPCONTEXT lpContext) {
-	AddVectoredExceptionHandler(TRUE, ExceptionHandler);
+	//AddVectoredExceptionHandler(TRUE, ExceptionHandler);
 	Log(XORSTR(L"[v] Avn initial phase"));
 	hModules::_hCurrent = hModule;
 	IsAvnStaticLoaded = (lpContext != NULL);
