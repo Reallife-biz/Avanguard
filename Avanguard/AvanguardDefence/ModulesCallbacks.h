@@ -16,17 +16,17 @@
 extern ModulesStorage ValidModulesStorage;
 
 NTSTATUS CALLBACK PreLoadModuleCallback(
-	OUT PBOOL			SkipOriginalCall,
-	IN PWCHAR			PathToFile,
-	IN PULONG			Flags,
-	IN PUNICODE_STRING	ModuleFileName,
-	OUT PHANDLE			ModuleHandle
+    OUT PBOOL			SkipOriginalCall,
+    IN PWCHAR			PathToFile,
+    IN PULONG			Flags,
+    IN PUNICODE_STRING	ModuleFileName,
+    OUT PHANDLE			ModuleHandle
 );
 
 VOID CALLBACK DllNotificationRoutine(
-	LDR_NOTIFICATION_REASON Reason,
-	IN PLDR_DLL_NOTIFICATION_DATA NotificationData,
-	IN PCONTEXT Context
+    LDR_NOTIFICATION_REASON Reason,
+    IN PLDR_DLL_NOTIFICATION_DATA NotificationData,
+    IN PCONTEXT Context
 );
 
 // Вернуть FALSE для отмены загрузки модуля:

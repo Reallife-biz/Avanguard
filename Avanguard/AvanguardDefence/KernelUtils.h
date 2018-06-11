@@ -6,8 +6,8 @@
 #include <Windows.h>
 
 typedef struct _DRIVER_INFO {
-	PVOID BaseAddress;
-	std::wstring Path;
+    PVOID BaseAddress;
+    std::wstring Path;
 } DRIVER_INFO, *PDRIVER_INFO;
 
 // Получить список загруженных драйверов и модулей ядра:

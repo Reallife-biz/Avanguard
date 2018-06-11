@@ -3,9 +3,9 @@
 #include <Windows.h>
 
 void inline pclr(unsigned short attributes) {
-	static HANDLE hConsole = NULL;
-	if (!hConsole) hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, attributes);
+    static HANDLE hConsole = NULL;
+    if (!hConsole) hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, attributes);
 }
 
 #define B_YELLOW	(FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)

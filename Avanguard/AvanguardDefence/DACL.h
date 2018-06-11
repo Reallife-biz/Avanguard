@@ -6,42 +6,42 @@
 #include <vector>
 
 typedef enum _SID_OBJECT {
-	sidCurrentUser,
-	sidEveryone,
-	sidSystem,
-	sidAdministrators
+    sidCurrentUser,
+    sidEveryone,
+    sidSystem,
+    sidAdministrators
 } SID_OBJECT, *PSID_OBJECT;
 
 typedef enum _SID_ACTION {
-	Allow,
-	Deny
+    Allow,
+    Deny
 } SID_ACTION, *PSID_ACTION;
 
 typedef struct _DACL_CAPABILITY {
-	PSID Sid;
-	SID_ACTION SidAction;
-	DWORD AccessRights;
+    PSID Sid;
+    SID_ACTION SidAction;
+    DWORD AccessRights;
 } DACL_CAPABILITY, *PDACL_CAPABILITY;
 
 class DACL {
 private:
-	HANDLE hObject;
+    HANDLE hObject;
 
-	PTOKEN_USER TokenInfo = NULL;
-	PSID SidCurrentUser, SidEveryone, SidSystem, SidAdministrators;
-	std::vector<DACL_CAPABILITY> DACLs;
+    PTOKEN_USER TokenInfo = NULL;
+    PSID SidCurrentUser, SidEveryone, SidSystem, SidAdministrators;
+    std::vector<DACL_CAPABILITY> DACLs;
 
-	PSID AllocCurrentUserSid();
-	PSID AllocEveryoneSid();
-	PSID AllocSystemSid();
-	PSID AllocAdministratorsSid();
+    PSID AllocCurrentUserSid();
+    PSID AllocEveryoneSid();
+    PSID AllocSystemSid();
+    PSID AllocAdministratorsSid();
 
-	PSID GetSid(SID_OBJECT SidObject);
+    PSID GetSid(SID_OBJECT SidObject);
 public:
-	DACL(HANDLE hObject);
-	~DACL();
-	
-	BOOL Allow(SID_OBJECT SidObject, ULONG AccessRights);
-	BOOL Deny(SID_OBJECT SidObject, ULONG AccessRights);
-	BOOL Apply();
+    DACL(HANDLE hObject);
+    ~DACL();
+    
+    BOOL Allow(SID_OBJECT SidObject, ULONG AccessRights);
+    BOOL Deny(SID_OBJECT SidObject, ULONG AccessRights);
+    BOOL Apply();
 };

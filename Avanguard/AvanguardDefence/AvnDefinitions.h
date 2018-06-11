@@ -17,18 +17,18 @@
 #define JAVA_BINDINGS
 
 #ifdef MODULES_FILTER
-	#define WINDOWS_HOOKS_FILTER
+    #define WINDOWS_HOOKS_FILTER
 #endif
 
 #if defined MODULES_FILTER && defined MEMORY_FILTER
-	#define CONTEXT_FILTER
+    #define CONTEXT_FILTER
 #endif
 
 #ifdef TIMERED_CHECKINGS
-	#ifdef MODULES_FILTER
-		#define FIND_CHANGED_MODULES
-	#endif
-	#ifdef MEMORY_FILTER
-		#define FIND_UNKNOWN_MEMORY
-	#endif
+    #ifdef MODULES_FILTER
+        #define FIND_CHANGED_MODULES
+    #endif
+    #ifdef MEMORY_FILTER
+        #define FIND_UNKNOWN_MEMORY
+    #endif
 #endif

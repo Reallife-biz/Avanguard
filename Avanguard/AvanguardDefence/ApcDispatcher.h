@@ -5,8 +5,8 @@
 #include "..\\HoShiMin's API\\HookHelper.h"
 
 /*
-	ApcProc - APC-процедура
-	Continue - адрес возврата на продолжение
+    ApcProc - APC-процедура
+    Continue - адрес возврата на продолжение
 */
 
 typedef NTSTATUS(NTAPI *_NtTestAlert)();
@@ -16,9 +16,9 @@ typedef BOOL (NTAPI *_ApcCallback)(PVOID ApcProc, PVOID Continue);
 
 class ApcDispatcher final {
 private:
-	static BOOL Initialized;
+    static BOOL Initialized;
 public:
-	static VOID SetupApcCallback(_ApcCallback Callback);
-	static BOOL EnableApcFilter();
-	static VOID DisableApcFilter();
+    static VOID SetupApcCallback(_ApcCallback Callback);
+    static BOOL EnableApcFilter();
+    static VOID DisableApcFilter();
 };

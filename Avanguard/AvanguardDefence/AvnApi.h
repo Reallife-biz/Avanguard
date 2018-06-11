@@ -21,20 +21,20 @@ typedef UINT64	(WINAPI *_AvnGetHWID)();
 typedef UINT64	(WINAPI *_AvnHash)(PVOID Data, ULONG Size);
 
 typedef struct _AVN_API {
-	_AvnStart					AvnStart;					// Synchronized
-	_AvnStop					AvnStop;					// Synchronized
-	_AvnIsStarted				AvnIsStarted;				// Doesn't need synchronization
-	_AvnIsStaticLoaded			AvnIsStaticLoaded;			// Doesn't need synchronization
-	_AvnRegisterThreatNotifier	AvnRegisterThreatNotifier;	// Doesn't need synchronization
-	_AvnEliminateThreat			AvnEliminateThreat;			// Doesn't need synchronization
-	_AvnLock					AvnLock;
-	_AvnUnlock					AvnUnlock;
-	_AvnRehashModule			AvnRehashModule;
-	_AvnIsModuleValid			AvnIsModuleValid;
-	_AvnIsFileProtected			AvnIsFileProtected;
-	_AvnIsFileSigned			AvnIsFileSigned;
-	_AvnVerifyEmbeddedSignature AvnVerifyEmbeddedSignature;
-	_AvnIsAddressAllowed		AvnIsAddressAllowed;
-	_AvnGetHWID					AvnGetHWID;					// Doesn't need synchronization
-	_AvnHash					AvnHash;					// Doesn't need synchronization
+    _AvnStart					AvnStart;					// Synchronized
+    _AvnStop					AvnStop;					// Synchronized
+    _AvnIsStarted				AvnIsStarted;				// Doesn't need synchronization
+    _AvnIsStaticLoaded			AvnIsStaticLoaded;			// Doesn't need synchronization
+    _AvnRegisterThreatNotifier	AvnRegisterThreatNotifier;	// Doesn't need synchronization
+    _AvnEliminateThreat			AvnEliminateThreat;			// Doesn't need synchronization
+    _AvnLock					AvnLock;
+    _AvnUnlock					AvnUnlock;
+    _AvnRehashModule			AvnRehashModule;
+    _AvnIsModuleValid			AvnIsModuleValid;
+    _AvnIsFileProtected			AvnIsFileProtected;
+    _AvnIsFileSigned			AvnIsFileSigned;
+    _AvnVerifyEmbeddedSignature AvnVerifyEmbeddedSignature;
+    _AvnIsAddressAllowed		AvnIsAddressAllowed;
+    _AvnGetHWID					AvnGetHWID;					// Doesn't need synchronization
+    _AvnHash					AvnHash;					// Doesn't need synchronization
 } AVN_API, *PAVN_API;

@@ -11,16 +11,16 @@
 
 class MemoryStorage {
 private:
-	concurrency::concurrent_unordered_map<PVOID, BOOL> MemoryMap; // BaseAddress -> Present
-	void AddRegion(PVOID Address);
-	void RemoveRegion(PVOID Address);
+    concurrency::concurrent_unordered_map<PVOID, BOOL> MemoryMap; // BaseAddress -> Present
+    void AddRegion(PVOID Address);
+    void RemoveRegion(PVOID Address);
 public:
-	MemoryStorage();
-	~MemoryStorage();
+    MemoryStorage();
+    ~MemoryStorage();
 
-	void ReloadMemoryRegions();
+    void ReloadMemoryRegions();
 
-	void ProcessAllocation(PVOID Base);
-	void ProcessFreeing(PVOID Base);
-	bool IsMemoryInMap(PVOID Address);
+    void ProcessAllocation(PVOID Base);
+    void ProcessFreeing(PVOID Base);
+    bool IsMemoryInMap(PVOID Address);
 };

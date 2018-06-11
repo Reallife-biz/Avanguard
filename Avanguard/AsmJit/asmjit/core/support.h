@@ -298,7 +298,7 @@ namespace Internal {
     #elif ASMJIT_CXX_GNU
     return uint32_t(__builtin_ctzll(x));
     #else
-    return ctzGeneric(x);
+    return (uint32_t)ctzGeneric(x);
     #endif
   }
 }
