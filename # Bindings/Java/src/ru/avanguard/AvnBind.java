@@ -37,7 +37,10 @@ public final class AvnBind {
     public static native boolean    avnIsStarted();
     public static native boolean    avnIsStaticLoaded();
     public static native void       avnEliminateThreat(int threatType);
-    public static native long       avnGetHWID();
+    public static native long       avnGetCpuid();
+	public static native long       avnGetSmbiosId();
+	public static native long       avnGetMacId();
+	public static native long       avnGetHddId();
     public static native long       avnGetHash(byte[] data);
 
     public static native void avnRegisterThreatNotifier(ThreatNotifier notifier);

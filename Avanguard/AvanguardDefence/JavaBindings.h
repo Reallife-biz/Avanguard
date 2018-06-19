@@ -4,17 +4,14 @@
 
 #ifdef JAVA_BINDINGS
 
-#include "HWIDsUtils.h"
-#include "ThreatTypes.h"
-
 #include "jni.h"
-
-#pragma comment(lib, "jvm.lib")
+#include "ThreatElimination.h"
+#include "ThreatTypes.h"
 
 JNIEXPORT 
 jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved);
 
 BOOL IsJavaBinded();
-BOOL CallJavaNotifier(AVN_THREAT Threat);
+AVN_ET_ACTION CallJavaNotifier(AVN_THREAT Threat);
 
 #endif

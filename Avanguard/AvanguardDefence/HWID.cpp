@@ -70,15 +70,23 @@ BOOL GetHddInfo(BYTE PhysicalDriveNumber, OUT PHDD_INFO pHddInfo) {
     // Получили структуру, внутри которой по смещениям лежат строковые данные,
     // получаем указатели на них и возвращаем в структуре (саму структуру НЕ освобождаем!)
 
-    ULONG VendorIdOffset		= pDeviceDescriptor->VendorIdOffset;
-    ULONG ProductIdOffset		= pDeviceDescriptor->ProductIdOffset;
+    ULONG VendorIdOffset        = pDeviceDescriptor->VendorIdOffset;
+    ULONG ProductIdOffset       = pDeviceDescriptor->ProductIdOffset;
     ULONG ProductRevisionOffset = pDeviceDescriptor->ProductRevisionOffset;
-    ULONG SerialNumberOffset	= pDeviceDescriptor->SerialNumberOffset;
+    ULONG SerialNumberOffset    = pDeviceDescriptor->SerialNumberOffset;
 
-    pHddInfo->VendorId			= VendorIdOffset		!= 0 ? (LPCSTR)pDeviceDescriptor + VendorIdOffset			: NULL;
-    pHddInfo->ProductId			= ProductIdOffset		!= 0 ? (LPCSTR)pDeviceDescriptor + ProductIdOffset			: NULL;
-    pHddInfo->ProductRevision	= ProductRevisionOffset != 0 ? (LPCSTR)pDeviceDescriptor + ProductRevisionOffset	: NULL;
-    pHddInfo->SerialNumber		= SerialNumberOffset	!= 0 ? (LPCSTR)pDeviceDescriptor + SerialNumberOffset		: NULL;
+    pHddInfo->VendorId = VendorIdOffset != 0 && VendorIdOffset < DeviceDescriptor.Size 
+        ? (LPCSTR)pDeviceDescriptor + VendorIdOffset 
+        : NULL;
+    pHddInfo->ProductId = ProductIdOffset != 0 && ProductIdOffset < DeviceDescriptor.Size 
+        ? (LPCSTR)pDeviceDescriptor + ProductIdOffset
+        : NULL;
+    pHddInfo->ProductRevision = ProductRevisionOffset != 0 && ProductRevisionOffset < DeviceDescriptor.Size 
+        ? (LPCSTR)pDeviceDescriptor + ProductRevisionOffset
+        : NULL;
+    pHddInfo->SerialNumber = SerialNumberOffset	!= 0 && SerialNumberOffset < DeviceDescriptor.Size 
+        ? (LPCSTR)pDeviceDescriptor + SerialNumberOffset
+        : NULL;
 
     pHddInfo->HddInfoDataContainer = pDeviceDescriptor;
 
@@ -272,7 +280,7 @@ PVOID ParseSystemInfo(IN PSM_SYSTEM_INFO SystemInfo, OUT PFIRMWARE_INFO Firmware
     FirmwareInfo->SystemData.SystemInfo = SystemInfo;
 
     LPCSTR SystemInfoTextData = (LPCSTR)SystemInfo + SystemInfo->Length;
-    FirmwareInfo->SystemData.Manufactorer	= FindStringByNumber(SystemInfoTextData, SystemInfo->Manufacturer);
+    FirmwareInfo->SystemData.Manufacturer	= FindStringByNumber(SystemInfoTextData, SystemInfo->Manufacturer);
     FirmwareInfo->SystemData.ProductName	= FindStringByNumber(SystemInfoTextData, SystemInfo->ProductName);
     FirmwareInfo->SystemData.Version		= FindStringByNumber(SystemInfoTextData, SystemInfo->Version);
     FirmwareInfo->SystemData.SerialNumber	= FindStringByNumber(SystemInfoTextData, SystemInfo->SerialNumber);
@@ -287,7 +295,7 @@ PVOID ParseBoardInfo(IN PBASEBOARD_INFO BaseboardInfo, OUT PFIRMWARE_INFO Firmwa
     FirmwareInfo->BaseboardData.BaseboardInfo = BaseboardInfo;
 
     LPCSTR BaseboardTextData = (LPCSTR)BaseboardInfo + BaseboardInfo->Length;
-    FirmwareInfo->BaseboardData.Manufactorer		= FindStringByNumber(BaseboardTextData, BaseboardInfo->Manufacturer);
+    FirmwareInfo->BaseboardData.Manufacturer		= FindStringByNumber(BaseboardTextData, BaseboardInfo->Manufacturer);
     FirmwareInfo->BaseboardData.Product				= FindStringByNumber(BaseboardTextData, BaseboardInfo->Product);
     FirmwareInfo->BaseboardData.Version				= FindStringByNumber(BaseboardTextData, BaseboardInfo->Version);
     FirmwareInfo->BaseboardData.SerialNumber		= FindStringByNumber(BaseboardTextData, BaseboardInfo->SerialNumber);

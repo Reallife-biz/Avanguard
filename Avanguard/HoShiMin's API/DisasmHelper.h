@@ -1,10 +1,5 @@
 #pragma once
 
-#define ZYDIS_STATIC_DEFINE
-#include "..\\Zydis\\Zydis\\Zydis.h"
-
-#include <string>
-
 typedef enum _CODE_ARCH {
     arch_x86,
     arch_x64,

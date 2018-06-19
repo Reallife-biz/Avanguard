@@ -4,6 +4,7 @@
 #include <clocale>
 
 #include "AvnDefinitions.h"
+#include "AntiMacros.h"
 #include "ThreadsFilter.h"
 #include "ModulesFilter.h"
 #include "PEAnalyzer.h"
@@ -58,6 +59,7 @@ void Log(const std::wstring& Text) {
         Initialized = TRUE;
     }
 
+    int size = sizeof(std::wstring::value_type);
     std::wstring ToWrite = XORSTR(L"[PID: ") + ValToWideStr(GetCurrentProcessId()) + XORSTR(L"] ") + Text + L"\r\n";
 
     EnterCriticalSection(&CriticalSection);
@@ -173,7 +175,7 @@ BOOL CALLBACK OnThreadCreated(
 
     if (!ThreadIsLocal && !(ThreadIsLocal = IsThreadAllowed(EntryPoint))) {
         Log(XORSTR(L"[x] Thread ") + ValToWideStr(GetCurrentThreadId()) + XORSTR(L" is blocked!"));
-        //EliminateThreat(avnRemoteThread, NULL);
+        EliminateThreat(avnRemoteThread, NULL, etContinue);
     }
 
 #ifdef MITIGATIONS
@@ -215,7 +217,7 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 
     Log(IsFileAllowed ? (XORSTR(L"[v] Module ") + Path + XORSTR(L" allowed!")) : (XORSTR(L"[x] Module ") + Path + XORSTR(L" is blocked!")));
 
-    if (!IsFileAllowed) EliminateThreat(avnWindowsHooksInjection, NULL);
+    if (!IsFileAllowed) EliminateThreat(avnWindowsHooksInjection, NULL, etContinue);
     return IsFileAllowed;
 }
 #endif
@@ -223,7 +225,7 @@ BOOL CALLBACK OnWindowsHookLoadLibrary(PUNICODE_STRING ModuleFileName) {
 #ifdef STACKTRACE_CHECK
 BOOL CALLBACK OnUnknownTraceLoadLibrary(PVOID Address, PUNICODE_STRING ModuleFileName) {
     Log(XORSTR(L"[x] Unknown trace entry ") + ValToWideHex(Address, 16) + XORSTR(L" on load module ") + std::wstring(ModuleFileName->Buffer));
-    EliminateThreat(avnUnknownTraceLoadLibrary, NULL);
+    EliminateThreat(avnUnknownTraceLoadLibrary, NULL, etTerminate);
     return FALSE;
 }
 #endif
@@ -254,7 +256,7 @@ BOOL IsTraceValid() {
 NTSTATUS NTAPI PreNtContinue(IN PBOOL SkipOriginalCall, PCONTEXT Context, BOOL TestAlert) {
     if (!IsTraceValid()) {
         Log(XORSTR(L"[x] PreNtContinue detected unknown trace element!"));
-        EliminateThreat(avnContextManipulation, NULL);
+        EliminateThreat(avnContextManipulation, NULL, etTerminate);
         *SkipOriginalCall = TRUE;
         return STATUS_ACCESS_DENIED;
     }
@@ -264,7 +266,7 @@ NTSTATUS NTAPI PreNtContinue(IN PBOOL SkipOriginalCall, PCONTEXT Context, BOOL T
 NTSTATUS NTAPI PreSetContext(IN PBOOL SkipOriginalCall, HANDLE ThreadHandle, PCONTEXT Context) {
     if (!IsTraceValid()) {
         Log(XORSTR(L"[x] PreSetContext detected unknown trace element!"));
-        EliminateThreat(avnContextManipulation, NULL);
+        EliminateThreat(avnContextManipulation, NULL, etTerminate);
         *SkipOriginalCall = TRUE;
         return STATUS_ACCESS_DENIED;
     }
@@ -304,7 +306,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
     ValidModulesStorage.FindChangedModules([](const MODULE_INFO& ModuleInfo) -> bool {
         if (IsModuleRestricted(ModuleInfo.Name.c_str())) {
             Log(XORSTR(L"[x] Critical module ") + ModuleInfo.Name + XORSTR(L" was changed!"));
-            EliminateThreat(avnCriticalModuleChanged, NULL);
+            EliminateThreat(avnCriticalModuleChanged, NULL, etTerminate);
             return true;
         }
 
@@ -353,7 +355,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
         if (ValidModulesHooked)
             ValidModulesStorage.RecalcModuleHash(hTarget);
         else
-            EliminateThreat(avnUnknownInterception, NULL);
+            EliminateThreat(avnUnknownInterception, NULL, etTerminate);
 
         return true;
     });
@@ -365,7 +367,7 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
             if (GetModuleBase(MemoryInfo->BaseAddress) == NULL && !VMStorage.IsMemoryInMap(MemoryInfo->BaseAddress)) {
                 Log(XORSTR(L"[x] Unknown memory ") + ValToWideHex(MemoryInfo->BaseAddress, 16));
                 DisassembleAndLog(MemoryInfo->BaseAddress, 16);
-                EliminateThreat(avnUnknownMemoryRegion, NULL);
+                EliminateThreat(avnUnknownMemoryRegion, NULL, etTerminate);
             }
         }
         return true;
@@ -494,7 +496,7 @@ BOOL AvnStartDefence() {
     ApcDispatcher::SetupApcCallback([](PVOID ApcProc, PVOID RetAddr) -> BOOL {
         const BOOL IsApcAllowed = GetModuleBase(ApcProc) != NULL;
         Log(IsApcAllowed ? XORSTR(L"[i] Allowed APC queried!") : XORSTR(L"[x] APC disallowed!"));
-        if (!IsApcAllowed) EliminateThreat(avnUnknownApcDestination, NULL);
+        if (!IsApcAllowed) EliminateThreat(avnUnknownApcDestination, NULL, etContinue);
         return IsApcAllowed;
     });
     Log(XORSTR(L"[v] APC filters setted up"));
@@ -532,10 +534,6 @@ BOOL AvnStartDefence() {
     Log(XORSTR(L"[v] Memory regions reloaded"));
 #endif
 
-#ifdef TIMERED_CHECKINGS
-    OperateTimeredCheckings(TRUE);
-#endif
-
 #ifdef SELF_REMAPPING
     RemapAvnExecutableSections();
 #endif
@@ -545,12 +543,26 @@ BOOL AvnStartDefence() {
     SwitchThreadsExecutionStatus(Resume);
     Log(XORSTR(L"[i] All threads were resumed"));
 
+#ifdef TIMERED_CHECKINGS
+    OperateTimeredCheckings(TRUE);
+#endif
+
+#ifdef SKIP_VIRTUAL_INPUT
+    VirtualInput::SetupFilter(HkMouse);
+    VirtualInput::SetupFilter(HkKeyboard);
+#endif
+
     return TRUE;
 }
 
 VOID AvnStopDefence() {
     if (!IsAvnStarted) return;
     AvnApi.AvnLock();
+
+#ifdef SKIP_VIRTUAL_INPUT
+    VirtualInput::RemoveFilter(HkMouse);
+    VirtualInput::RemoveFilter(HkKeyboard);
+#endif
 
 #ifdef TIMERED_CHECKINGS
     OperateTimeredCheckings(FALSE);

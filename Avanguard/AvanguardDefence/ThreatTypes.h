@@ -14,6 +14,8 @@ typedef enum _AVN_THREAT {
     avnUnknownApcDestination
 } AVN_THREAT, *PAVN_THREAT;
 
+// Return TRUE - continue execution
+// Return FALSE - terminate process
 typedef BOOL(WINAPI *_AvnThreatNotifier)(
     AVN_THREAT Threat,
     OPTIONAL PVOID Data

@@ -4,6 +4,8 @@
 
 //#define SELF_REMAPPING
 
+//#define SKIP_VIRTUAL_INPUT
+
 #define STRICT_DACLs
 //#define MITIGATIONS /* Сажает FPS с JIT'ом */
 #define SKIP_APP_INIT_DLLS

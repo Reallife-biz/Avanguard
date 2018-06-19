@@ -1,4 +1,10 @@
 #include "stdafx.h"
+
+#define ZYDIS_STATIC_DEFINE
+#include "..\\Zydis\\Zydis\\Zydis.h"
+
+#include <string>
+
 #include "DisasmHelper.h"
 
 std::string disassemble(

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "HWID.h"
-#include "..\\t1ha\\t1ha.h"
-
-#include <string>
-
-UINT64 GetHWID();
+class HWIDs final {
+public:
+    static UINT64 GetCpuid();
+    static UINT64 GetSmbiosId();
+    static UINT64 GetMacId();
+    static UINT64 GetHddId();
+};

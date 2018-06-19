@@ -16,18 +16,15 @@ NTSTATUS CALLBACK PreLoadModuleCallback(
     IN PUNICODE_STRING	ModuleFileName,
     OUT PHANDLE			ModuleHandle
 ) {
+#if defined WINDOWS_HOOKS_FILTER || defined STACKTRACE_CHECK
     AvnApi.AvnLock();
 
-#if defined WINDOWS_HOOKS_FILTER || defined STACKTRACE_CHECK
-    __declspec(thread) static unsigned int LoadingCount = 0;
-
-    if (LoadingCount == 0) {
 #ifdef WINDOWS_HOOKS_FILTER
-        LoadingCount++;
-        if (WinHooks::IsCalledFromWinHook() && WinHookLoadCallback) 
-            *SkipOriginalCall = !WinHookLoadCallback(ModuleFileName);
+    if (WinHooks::IsCalledFromWinHook() && WinHookLoadCallback) 
+        *SkipOriginalCall = !WinHookLoadCallback(ModuleFileName);
 #endif
 
+    if (!*SkipOriginalCall) {
 #ifdef STACKTRACE_CHECK
         const int TraceCount = 35;
         PVOID Ptrs[TraceCount];
@@ -48,12 +45,11 @@ NTSTATUS CALLBACK PreLoadModuleCallback(
                 *SkipOriginalCall = !UnknownTraceLoadCallback(Address, ModuleFileName);
         }
 #endif
-
-        LoadingCount--;
     }
-#endif
 
     AvnApi.AvnUnlock();
+#endif
+    
     return STATUS_SUCCESS;
 }
 

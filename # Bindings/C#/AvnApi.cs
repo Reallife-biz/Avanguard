@@ -44,8 +44,11 @@ namespace AvnApi
             public IntPtr AvnIsFileSigned;
             public IntPtr AvnVerifyEmbeddedSignature;
             public IntPtr AvnIsAddressAllowed;
-            public IntPtr AvnGetHWID;                 // Doesn't need synchronization
-            public IntPtr AvnHash;                    // Doesn't need synchronization
+            public IntPtr AvnGetCpuid;                 // Doesn't need synchronization
+			public IntPtr AvnGetSmbiosId;              // Doesn't need synchronization
+			public IntPtr AvnGetMacId;                 // Doesn't need synchronization
+			public IntPtr AvnGetHddId;                 // Doesn't need synchronization
+            public IntPtr AvnHash;                     // Doesn't need synchronization
         }
 
         public enum AVN_THREAT : byte
@@ -77,7 +80,10 @@ namespace AvnApi
             public delegate bool _AvnIsFileSigned([MarshalAs(UnmanagedType.LPWStr)] string filePath, bool checkRevocation);
             public delegate bool _AvnVerifyEmbeddedSignature([MarshalAs(UnmanagedType.LPWStr)] string filePath);
             public delegate bool _AvnIsAddressAllowed(IntPtr address, bool includeJitMemory);
-            public delegate UInt64 _AvnGetHWID();
+            public delegate UInt64 _AvnGetCpuid();
+			public delegate UInt64 _AvnGetSmbiosId();
+			public delegate UInt64 _AvnGetMacId();
+			public delegate UInt64 _AvnGetHddId();
             public delegate UInt64 _AvnHash(IntPtr data, UInt32 size);
         }
 
@@ -97,7 +103,10 @@ namespace AvnApi
             public static AvnApiDelegates._AvnIsFileSigned AvnIsFileSigned;
             public static AvnApiDelegates._AvnVerifyEmbeddedSignature AvnVerifyEmbeddedSignature;
             public static AvnApiDelegates._AvnIsAddressAllowed AvnIsAddressAllowed;
-            public static AvnApiDelegates._AvnGetHWID AvnGetHWID;
+            public static AvnApiDelegates._AvnGetCpuid AvnGetCpuid;
+			public static AvnApiDelegates._AvnGetSmbiosId AvnGetSmbiosId;
+			public static AvnApiDelegates._AvnGetMacId AvnGetMacId;
+			public static AvnApiDelegates._AvnGetHddId AvnGetHddId;
             public static AvnApiDelegates._AvnHash AvnHash;
         }
 
@@ -126,8 +135,11 @@ namespace AvnApi
             API.AvnIsFileSigned    = GetDelegate<AvnApiDelegates._AvnIsFileSigned>(avnApiPointers.AvnIsFileSigned);
             API.AvnVerifyEmbeddedSignature  = GetDelegate<AvnApiDelegates._AvnVerifyEmbeddedSignature>(avnApiPointers.AvnVerifyEmbeddedSignature);
             API.AvnIsAddressAllowed = GetDelegate<AvnApiDelegates._AvnIsAddressAllowed>(avnApiPointers.AvnIsAddressAllowed);
-            API.AvnGetHWID = GetDelegate<AvnApiDelegates._AvnGetHWID>(avnApiPointers.AvnGetHWID);
-            API.AvnHash    = GetDelegate<AvnApiDelegates._AvnHash>(avnApiPointers.AvnHash);
+            API.AvnGetCpuid    = GetDelegate<AvnApiDelegates._AvnGetCpuid>(avnApiPointers.AvnGetCpuid);
+			API.AvnGetSmbiosId = GetDelegate<AvnApiDelegates._AvnGetSmbiosId>(avnApiPointers.AvnGetSmbiosId);
+			API.AvnGetMacId    = GetDelegate<AvnApiDelegates._AvnGetMacId>(avnApiPointers.AvnGetMacId);
+			API.AvnGetHddId    = GetDelegate<AvnApiDelegates._AvnGetHddId>(avnApiPointers.AvnGetHddId);
+            API.AvnHash = GetDelegate<AvnApiDelegates._AvnHash>(avnApiPointers.AvnHash);
 
             return true;
         }

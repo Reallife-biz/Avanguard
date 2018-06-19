@@ -122,7 +122,7 @@ typedef struct _BIOS_FIRMWARE_DATA {
 typedef struct _SYSTEM_FIRMWARE_DATA {
     PSM_SYSTEM_INFO SystemInfo;
 // SMBIOS 2.0+:
-    LPCSTR Manufactorer;
+    LPCSTR Manufacturer;
     LPCSTR ProductName;
     LPCSTR Version;
     LPCSTR SerialNumber;
@@ -134,7 +134,7 @@ typedef struct _SYSTEM_FIRMWARE_DATA {
 // Информация о матплате:
 typedef struct _BASEBOARD_FIRMWARE_DATA {
     PBASEBOARD_INFO BaseboardInfo;
-    LPCSTR Manufactorer;
+    LPCSTR Manufacturer;
     LPCSTR Product;
     LPCSTR Version;
     LPCSTR SerialNumber;
