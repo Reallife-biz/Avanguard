@@ -24,6 +24,7 @@
 #include "HWIDsUtils.h"
 #include "ThreatElimination.h"
 #include "Remapping.h"
+#include "HandlesKeeper.h"
 
 #include "SfcWrapper.h"
 
@@ -368,6 +369,21 @@ VOID CALLBACK TimerCallback(PVOID Parameter, BOOLEAN TimerOrWaitFired) {
         return true;
     });
 #endif
+
+#ifdef HANDLES_KEEPER
+    static HandlesKeeper* hKeeper = NULL;
+    if (!hKeeper) hKeeper = new HandlesKeeper();
+    if (hKeeper) {
+        hKeeper->EnumHandles(
+            IsWindowsVistaOrGreater() ? OB_TYPE_PROCESS : OB_TYPE_PROCESS_XP,
+            TRUE,
+            [](PREMOTE_HANDLE_INFO HandleInfo, OUT PBOOL NeedToCloseSource) -> void {
+                *NeedToCloseSource = HandleInfo->RemoteProcessId != HandleInfo->CurrentProcessId;
+            }
+        );
+    }
+#endif
+
     AvnApi.AvnUnlock();
 }
 #endif

@@ -31,6 +31,7 @@
 #ifdef TIMERED_CHECKINGS
     // Период проверки:
     #define TIMER_INTERVAL 3000
+
     #ifdef MODULES_FILTER
         #define FIND_CHANGED_MODULES /* Искать модифицированные модули */
         #ifdef FIND_CHANGED_MODULES
@@ -38,8 +39,12 @@
             #define CRITICAL_MODULES { L"jvm.dll", L"java.dll" }
         #endif
     #endif
+
     #ifdef MEMORY_FILTER
         // Искать память, выделенную из чужих процессов:
         #define FIND_UNKNOWN_MEMORY
     #endif
+
+    // Закрывать свои хэндлы в чужих процессах:
+    //#define HANDLES_KEEPER
 #endif
