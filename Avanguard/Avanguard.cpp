@@ -70,7 +70,7 @@ void Log(const std::wstring& Text) {
 }
 
 VOID DisassembleAndLog(PVOID Address, BYTE InstructionsCount) {
-    disassemble([](void* Code, void* Address, unsigned int InstructionLength, char* Disassembly) -> void {
+    disassemble([](void* Code, void* Address, unsigned int InstructionLength, char* Disassembly) -> bool {
         std::wstring Bytes;
         for (unsigned int i = 0; i < InstructionLength; i++) {
             Bytes += ValToWideHex(*((PBYTE)Code + i), 2, FALSE);
@@ -78,6 +78,7 @@ VOID DisassembleAndLog(PVOID Address, BYTE InstructionsCount) {
         }
         Bytes = FillRightWide(Bytes, 22, L' ');
         Log(L"\t\t" + ValToWideHex(Address, 16) + L"\t" + Bytes + L"\t" + AnsiToWide(Disassembly));
+        return true;
     }, Address, Address, InstructionsCount);
 }
 #else
@@ -275,13 +276,7 @@ NTSTATUS NTAPI PreSetContext(IN PBOOL SkipOriginalCall, HANDLE ThreadHandle, PCO
 #endif
 
 BOOL IsModuleRestricted(LPCWSTR ModuleName) {
-    const LPCWSTR RestrictedModules[] = {
-        L"jvm.dll",
-        L"java.dll",
-        L"zip.dll",
-        //L"opengl32.dll",
-        //L"glu32.dll"
-    };
+    const LPCWSTR RestrictedModules[] = CRITICAL_MODULES;
 
     BOOL IsLibProtected = FALSE;
     for (const LPCWSTR RestrictedModule : RestrictedModules) {
@@ -412,8 +407,8 @@ BOOL OperateTimeredCheckings(BOOL DesiredState) {
                 &TimerHandle,
                 TimerCallback,
                 NULL,
-                1000,
-                1000,
+                TIMER_INTERVAL,
+                TIMER_INTERVAL,
                 WT_EXECUTELONGFUNCTION
             ))) {
                 Log(XORSTR(L"[v] Periodic check enabled"));

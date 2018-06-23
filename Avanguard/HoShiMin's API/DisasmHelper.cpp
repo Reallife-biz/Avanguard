@@ -17,7 +17,7 @@ std::string disassemble(
     if (arch == arch_native) {
 #ifdef _AMD64_
         arch = arch_x64;
-#elif _x86_
+#else if defined _X86_
         arch = arch_x86;
 #endif
     }
@@ -43,7 +43,7 @@ std::string disassemble(
 
     uint64_t instructionPointer = (uint64_t)base_address;
     uint8_t* readPointer = (uint8_t*)code;
-    size_t length = instructions_count * 24;
+    size_t length = (size_t)instructions_count * 24;
     ZydisDecodedInstruction instruction;
     while (ZYDIS_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, readPointer, length, instructionPointer, &instruction))) {
         if (instructions_counter == instructions_count) break;
@@ -55,7 +55,8 @@ std::string disassemble(
         sprintf_s(address, "0x%016I64X\t", (uint64_t)instructionPointer);
         result += std::string(address) + buffer + std::string("\r\n");
 
-        if (callback) callback((void*)readPointer, (void*)instructionPointer, instruction.length, buffer);
+        if (callback)
+            if (!callback((void*)readPointer, (void*)instructionPointer, instruction.length, buffer)) break;
 
         readPointer += instruction.length;
         length -= instruction.length;

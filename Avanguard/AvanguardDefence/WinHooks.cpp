@@ -1,6 +1,17 @@
 #include "stdafx.h"
 #include "WinHooks.h"
 
+#include "../HoShiMin's API/DisasmHelper.h"
+
+SIZE_T GetFuncSize(PVOID BaseAddress, unsigned int InstructionsCount) {
+    SIZE_T Result = 0;
+    disassemble([&](void* Code, void* BaseAddress, unsigned int InstructionLength, char* Disassembly) -> bool {
+        Result += InstructionLength;
+        return strstr(Disassembly, "ret") == 0;
+    }, BaseAddress, BaseAddress, InstructionsCount);
+    return Result;
+}
+
 BOOL WinHooks::Initialized = FALSE;
 PVOID WinHooks::__ClientLoadLibrary = NULL;
 std::vector<PVOID> WinHooks::KernelCallbacks;
@@ -39,8 +50,11 @@ BOOL WinHooks::IsCalledFromWinHook() {
     } else {
         for (unsigned short i = 0; i < Captured; i++) {
             PVOID Address = Ptrs[i];
-            for (size_t j = 0; j < KernelCallbacks.size() - 1; j++) {
-                if ((Address >= KernelCallbacks[j]) && (Address <= KernelCallbacks[j + 1])) {
+            for (unsigned int j = 0; j < KernelCallbacks.size() - 1; j++) {
+                if (
+                    ((SIZE_T)Address >= (SIZE_T)KernelCallbacks[j]) && 
+                    ((SIZE_T)Address < (SIZE_T)KernelCallbacks[j] + GetFuncSize(KernelCallbacks[j], 999999))
+                ) {
                     Status = TRUE;
                     __ClientLoadLibrary = Address;
                     goto AddressFound;

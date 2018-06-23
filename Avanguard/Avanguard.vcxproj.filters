@@ -588,6 +588,9 @@
     <ClInclude Include="AvanguardDefence\SfcWrapper.h">
       <Filter>AvanguardDefence\Sfc</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -767,5 +770,10 @@
     <MASM Include="AvanguardDefence\ApcInterceptionRoutine.asm">
       <Filter>AvanguardDefence\KiUserApcDispatcher</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Avanguard.rc">
+      <Filter>Файлы ресурсов</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
